@@ -1,20 +1,45 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MindAR - 10 Image Targets</title>
+    <!-- A-Frame FrameWork -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <!-- MindAR for A-Frame -->
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
     <style>
-      body { margin: 0; overflow: hidden; }
+      body {
+        margin: 0;
+        overflow: hidden;
+      }
+      /* Simple overlay UI to show the user what's happening */
+      #ui-overlay {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 999;
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 20px;
+        font-family: sans-serif;
+        font-size: 14px;
+        pointer-events: none;
+      }
     </style>
   </head>
   <body>
+
+    <!-- UI feedback text -->
+    <div id="ui-overlay">Point your camera at one of your 10 targets</div>
+
     <!-- 
-      NOTE: Added "maxTrack: 2". This tells MindAR it can track up to 2 targets 
-      simultaneously if they are both in the camera view.
+      maxTrack: 1 is recommended for performance with 10 targets unless 
+      you explicitly need to scan multiple images sitting side-by-side.
     -->
     <a-scene 
-      mindar-image="imageTargetSrc: ./targets.mind; maxTrack: 2;" 
+      mindar-image="imageTargetSrc: ./targets.mind; maxTrack: 1;" 
       color-space="sRGB" 
       renderer="colorManagement: true, physicallyCorrectLights" 
       vr-mode-ui="enabled: false" 
@@ -22,26 +47,61 @@
     >
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
       
-      <!-- ==================== FIRST IMAGE TARGET (Index 0) ==================== -->
-      <a-entity mindar-image-target="targetIndex: 0">
-        <!-- Blue plane and red box for your first image -->
-        <a-plane color="#3b82f6" opacity="0.5" position="0 0 0" height="1" width="1"></a-plane>
-        <a-box color="#ef4444" depth="0.2" height="0.2" width="0.2" position="0 0 0.2" 
-               animation="property: rotation; to: 0 360 0; dur: 2000; easing: linear; loop: true">
-        </a-box>
-      </a-entity>
+      <!-- JavaScript will dynamically inject the 10 target entities here -->
+      <div id="target-container"></div>
 
-      <!-- ==================== SECOND IMAGE TARGET (Index 1) ==================== -->
-      <a-entity mindar-image-target="targetIndex: 1">
-        <!-- Unique overlays for your second image (e.g., a green sphere) -->
-        <a-sphere color="#10b981" radius="0.25" position="0 0 0.25"
-                  animation="property: position; to: 0 0.2 0.25; dir: alternate; dur: 1500; loop: true; easing: easeInOutQuad">
-        </a-sphere>
-      </a-entity>
-
-      <!-- ==================== THIRD IMAGE TARGET (Index 2) ==================== -->
-      <!-- Add more as needed, just increment targetIndex: 2, 3, 4... -->
-      
     </a-scene>
+
+    <script>
+      const container = document.querySelector('#target-container');
+      const uiOverlay = document.querySelector('#ui-overlay');
+      const totalTargets = 10;
+
+      // 10 distinct colors assigned to targets 0 through 9
+      const colors = [
+        "#ef4444", "#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", 
+        "#ec4899", "#06b6d4", "#f97316", "#14b8a6", "#6366f1"
+      ];
+
+      // Loop to generate each target programmatically
+      for (let i = 0; i < totalTargets; i++) {
+        // 1. Create the parent anchor entity
+        const targetEntity = document.createElement('a-entity');
+        targetEntity.setAttribute('mindar-image-target', `targetIndex: ${i}`);
+        
+        // 2. Create a semi-transparent border plane to outline the physical image card
+        const borderPlane = document.createElement('a-plane');
+        borderPlane.setAttribute('color', colors[i]);
+        borderPlane.setAttribute('opacity', '0.3');
+        borderPlane.setAttribute('position', '0 0 0');
+        borderPlane.setAttribute('height', '1');
+        borderPlane.setAttribute('width', '1');
+        
+        // 3. Create the floating 3D spinning box
+        const box = document.createElement('a-box');
+        box.setAttribute('color', colors[i]);
+        box.setAttribute('position', '0 0 0.15'); // Raised slightly forward off the target
+        box.setAttribute('scale', '0.4 0.4 0.4');
+        box.setAttribute('animation', 'property: rotation; to: 0 360 360; dur: 4000; loop: true; easing: linear');
+
+        // 4. Attach event listeners to track when targets are found/lost
+        targetEntity.addEventListener("targetFound", () => {
+          console.log(`Target ${i} Detected`);
+          uiOverlay.innerText = `Scanning: Target #${i + 1}`;
+          uiOverlay.style.background = "rgba(16, 185, 129, 0.85)"; // Turn green on success
+        });
+
+        targetEntity.addEventListener("targetLost", () => {
+          console.log(`Target ${i} Lost`);
+          uiOverlay.innerText = "Point your camera at one of your 10 targets";
+          uiOverlay.style.background = "rgba(0, 0, 0, 0.7)"; // Revert UI color
+        });
+
+        // 5. Assemble the hierarchy and inject into the scene
+        targetEntity.appendChild(borderPlane);
+        targetEntity.appendChild(box);
+        container.appendChild(targetEntity);
+      }
+    </script>
   </body>
 </html>
