@@ -2,24 +2,19 @@
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    <!-- MindAR for A-Frame -->
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
     <style>
-      body {
-        margin: 0;
-        overflow: hidden;
-      }
+      body { margin: 0; overflow: hidden; }
     </style>
   </head>
   <body>
     <!-- 
-      Set imageTargetSrc to the path of your .mind file.
-      vr-mode-ui and device-orientation-permission-ui are disabled for a cleaner AR experience.
+      NOTE: Added "maxTrack: 2". This tells MindAR it can track up to 2 targets 
+      simultaneously if they are both in the camera view.
     -->
     <a-scene 
-      mindar-image="imageTargetSrc: ./targets.mind;" 
+      mindar-image="imageTargetSrc: ./targets.mind; maxTrack: 2;" 
       color-space="sRGB" 
       renderer="colorManagement: true, physicallyCorrectLights" 
       vr-mode-ui="enabled: false" 
@@ -27,30 +22,26 @@
     >
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
       
-      <!-- targetIndex: 0 refers to the first image in your targets.mind file -->
+      <!-- ==================== FIRST IMAGE TARGET (Index 0) ==================== -->
       <a-entity mindar-image-target="targetIndex: 0">
-        
-        <!-- Sample Overlay 1: A semi-transparent plane to highlight the detected image -->
-        <a-plane 
-          color="#3b82f6" 
-          opacity="0.5" 
-          position="0 0 0" 
-          height="1" 
-          width="1" 
-          rotation="0 0 0">
-        </a-plane>
-
-        <!-- Sample Overlay 2: A floating, spinning 3D box -->
-        <a-box 
-          color="#ef4444" 
-          depth="0.2" 
-          height="0.2" 
-          width="0.2" 
-          position="0 0 0.2" 
-          animation="property: rotation; to: 0 360 0; dur: 2000; easing: linear; loop: true">
+        <!-- Blue plane and red box for your first image -->
+        <a-plane color="#3b82f6" opacity="0.5" position="0 0 0" height="1" width="1"></a-plane>
+        <a-box color="#ef4444" depth="0.2" height="0.2" width="0.2" position="0 0 0.2" 
+               animation="property: rotation; to: 0 360 0; dur: 2000; easing: linear; loop: true">
         </a-box>
-        
       </a-entity>
+
+      <!-- ==================== SECOND IMAGE TARGET (Index 1) ==================== -->
+      <a-entity mindar-image-target="targetIndex: 1">
+        <!-- Unique overlays for your second image (e.g., a green sphere) -->
+        <a-sphere color="#10b981" radius="0.25" position="0 0 0.25"
+                  animation="property: position; to: 0 0.2 0.25; dir: alternate; dur: 1500; loop: true; easing: easeInOutQuad">
+        </a-sphere>
+      </a-entity>
+
+      <!-- ==================== THIRD IMAGE TARGET (Index 2) ==================== -->
+      <!-- Add more as needed, just increment targetIndex: 2, 3, 4... -->
+      
     </a-scene>
   </body>
 </html>
