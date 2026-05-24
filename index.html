@@ -97,6 +97,7 @@
         box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
       }
       .start-btn:hover { background: #0ea5e9; transform: scale(1.05); box-shadow: 0 4px 15px rgba(14, 165, 233, 0.4); }
+      .start-btn:disabled { background: #6b7280; cursor: not-allowed; transform: none; box-shadow: none; }
 
       #onboarding.hidden { opacity: 0; visibility: hidden; }
 
@@ -225,7 +226,7 @@
       <button class="action-btn" id="learn-btn">Tap sign to view guide</button>
     </div>
 
-    <!-- A-Frame Scene with uiLoading/uiScanning disabled to fix the infinite loading loop -->
+    <!-- A-Frame Scene with uiLoading/uiScanning disabled -->
     <a-scene 
       mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiLoading: no; uiScanning: no; maxTrack: 1; filterMinCF: 0.0001; filterBeta: 0.001;" 
       color-space="sRGB" 
@@ -266,15 +267,15 @@
       const distWarning = document.querySelector('#distance-warning');
       const learnBtn = document.querySelector('#learn-btn');
 
-      // Synthesized UI Click Sound (No external asset needed)
+      // Synthesized UI Click Sound
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       function playHologramPing() {
         if (audioCtx.state === 'suspended') audioCtx.resume();
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
-        osc.frequency.exponentialRampToValueAtTime(1760, audioCtx.currentTime + 0.1); // Slide up
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime); 
+        osc.frequency.exponentialRampToValueAtTime(1760, audioCtx.currentTime + 0.1); 
         gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
         osc.connect(gain);
@@ -286,12 +287,34 @@
       let activeTargetEntity = null;
       const totalTargets = 10;
 
-      startBtn.addEventListener('click', () => {
-        onboarding.classList.add('hidden');
-        scanGuide.style.opacity = "1";
-        uiOverlay.style.opacity = "1";
-        const arSystem = sceneEl.systems["mindar-image-system"];
-        arSystem.start();
+      // EXPLICIT CAMERA PERMISSION CHECK
+      startBtn.addEventListener('click', async () => {
+        startBtn.innerText = "Requesting Camera...";
+        startBtn.disabled = true;
+
+        try {
+          // 1. Force the browser to ask for camera permission right now
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          
+          // 2. We got permission! Stop this temporary stream so MindAR can take over
+          stream.getTracks().forEach(track => track.stop());
+
+          // 3. Hide onboarding, show UI
+          onboarding.classList.add('hidden');
+          scanGuide.style.opacity = "1";
+          uiOverlay.style.opacity = "1";
+          
+          // 4. Start MindAR engine
+          const arSystem = sceneEl.systems["mindar-image-system"];
+          arSystem.start();
+
+        } catch (err) {
+          // If the user clicks "Block" or the browser refuses (e.g. no HTTPS)
+          alert("Camera access was denied or is not available. Please allow camera access in your browser settings or ensure you are using HTTPS/localhost to use this app.");
+          startBtn.innerText = "Start Scanning";
+          startBtn.disabled = false;
+          console.error("Camera permission error:", err);
+        }
       });
 
       const imageOverlays = [
@@ -316,7 +339,7 @@
         const targetEntity = document.createElement('a-entity');
         targetEntity.setAttribute('mindar-image-target', `targetIndex: ${i}`);
         
-        // Setup Ambient Particles (Hidden by default)
+        // Setup Ambient Particles
         const particles = document.createElement('a-entity');
         particles.setAttribute('particle-system', 'preset: dust; particleCount: 150; color: #10b981, #ffffff; size: 0.6; maxAge: 2');
         particles.setAttribute('visible', 'false');
@@ -328,21 +351,18 @@
         shadowPlane.setAttribute('height', '5');
         shadowPlane.setAttribute('position', '0 -0.6 0'); 
         shadowPlane.setAttribute('rotation', '-90 0 0');
-        shadowPlane.setAttribute('material', 'shader: shadow; opacity: 0.5'); // Only renders shadows
+        shadowPlane.setAttribute('material', 'shader: shadow; opacity: 0.5'); 
         shadowPlane.setAttribute('shadow', 'receive: true');
         targetEntity.appendChild(shadowPlane);
 
         const signContainer = document.createElement('a-entity');
         signContainer.setAttribute('rotation', '90 0 0');
-        signContainer.setAttribute('scale', '0 0 0'); // Start at 0 for pop-up animation
-        signContainer.classList.add('clickable'); // Make raycaster detect this
+        signContainer.setAttribute('scale', '0 0 0'); 
+        signContainer.classList.add('clickable'); 
         
-        // Idle Rotation Animation
         signContainer.setAttribute('animation__rotate', 'property: rotation; from: 90 0 0; to: 90 360 0; loop: true; dur: 10000; easing: linear;');
-        // Pop-up Reveal Animation (Triggered manually)
         signContainer.setAttribute('animation__pop', 'property: scale; to: 1 1 1; dur: 800; easing: easeOutElastic; startEvents: pop-in');
 
-        // Creating Sign Meshes (Added cast shadow)
         const metalRim = document.createElement('a-cylinder');
         metalRim.setAttribute('radius', '0.51');       
         metalRim.setAttribute('height', '0.06');       
@@ -368,22 +388,16 @@
         signContainer.appendChild(signFace);
         targetEntity.appendChild(signContainer);
 
-        // 3D Click Interaction
         signContainer.addEventListener('click', () => {
           playHologramPing();
-          // Action when 3D object is tapped
-          window.open('https://en.wikipedia.org/wiki/Traffic_sign', '_blank'); // Replace with your actual target URL
+          window.open('https://en.wikipedia.org/wiki/Traffic_sign', '_blank'); 
         });
 
-        // On Target Found
         targetEntity.addEventListener("targetFound", () => {
           activeTargetEntity = targetEntity;
-          
-          // Trigger animations and particles
           signContainer.emit('pop-in');
           particles.setAttribute('visible', 'true');
           
-          // Update UI
           document.querySelector('#ui-icon').innerText = signData[i].icon;
           document.querySelector('#ui-title').innerText = signData[i].title;
           document.querySelector('#ui-desc').innerText = signData[i].desc;
@@ -393,16 +407,12 @@
           scanGuide.style.opacity = "0";
         });
 
-        // On Target Lost
         targetEntity.addEventListener("targetLost", () => {
           activeTargetEntity = null;
-          
-          // Reset models
           signContainer.setAttribute('scale', '0 0 0');
           particles.setAttribute('visible', 'false');
           distWarning.style.opacity = '0';
           
-          // Reset UI
           document.querySelector('#ui-icon').innerText = "📷";
           document.querySelector('#ui-title').innerText = "Scanner Ready";
           document.querySelector('#ui-desc').innerText = "Align a sign within the frame to scan.";
@@ -415,7 +425,6 @@
         container.appendChild(targetEntity);
       }
 
-      // Distance Checker Loop
       setInterval(() => {
         if (activeTargetEntity) {
           const distance = activeTargetEntity.object3D.position.length();
