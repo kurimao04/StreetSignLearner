@@ -2,10 +2,17 @@
 <html lang="en">
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>MindAR - Premium Mobile UI/UX</title>
+    <title>AR Sign Scanner</title>
     
     <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#10b981">
+
+    <!-- iOS Home Screen / Bookmark Icons -->
+    <link rel="apple-touch-icon" href="images/apple-icon-180.png">
+    <link rel="icon" type="image/png" href="images/favicon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="AR Scanner">
     
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
@@ -32,7 +39,7 @@
         display: flex;
         justify-content: space-between;
         z-index: 1001;
-        pointer-events: none; /* Let clicks pass through empty space */
+        pointer-events: none;
       }
 
       .nav-btn {
@@ -46,7 +53,7 @@
         font-size: 14px;
         font-weight: 600;
         cursor: pointer;
-        pointer-events: auto; /* Re-enable clicks for buttons */
+        pointer-events: auto;
         transition: 0.3s;
         box-shadow: 0 4px 15px rgba(0,0,0,0.3);
       }
@@ -87,7 +94,7 @@
          ========================================= */
       #ui-overlay {
         position: absolute; bottom: max(30px, env(safe-area-inset-bottom) + 15px); left: 50%; transform: translateX(-50%) translateY(20px); z-index: 999; width: 90%; max-width: 420px;
-        background: rgba(20, 20, 25, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4); border-radius: 24px; color: white; padding: clamp(15px, 5vw, 25px); text-align: center; pointer-events: auto; /* Changed to auto to allow button clicks */ transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); opacity: 0.9;
+        background: rgba(20, 20, 25, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4); border-radius: 24px; color: white; padding: clamp(15px, 5vw, 25px); text-align: center; pointer-events: auto; transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); opacity: 0.9;
       }
       #ui-overlay.found-state { background: rgba(16, 185, 129, 0.9); border: 1px solid rgba(255, 255, 255, 0.5); transform: translateX(-50%) translateY(0) scale(1.03); opacity: 1; }
       #ui-overlay h3 { margin: 0 0 6px 0; font-size: clamp(18px, 5vw, 22px); font-weight: 600; }
@@ -102,7 +109,9 @@
       }
       .action-btn:active { transform: scale(0.95); }
 
-      /* Reticle, Warnings & Onboarding Styles (Minimized for brevity) */
+      /* =========================================
+         ONBOARDING, WARNINGS & GUIDES
+         ========================================= */
       #onboarding-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #fafafa; background-image: linear-gradient(#d1d5db 1px, transparent 1px), linear-gradient(90deg, #d1d5db 1px, transparent 1px); background-size: 40px 40px; z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; transition: opacity 0.5s ease, visibility 0.5s ease; }
       #onboarding-screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
       .onboarding-card { background: white; border: 2px solid #111; padding: 30px; width: 90%; max-width: 400px; border-radius: 12px; box-shadow: 6px 6px 0px #111; }
@@ -148,6 +157,7 @@
       </div>
     </div>
 
+    <!-- UI Elements -->
     <div id="distance-warning">⚠️ Move closer to the sign</div>
     <div id="scanning-guide"><div class="corner top-left"></div><div class="corner top-right"></div><div class="corner bottom-left"></div><div class="corner bottom-right"></div></div>
     
@@ -182,7 +192,7 @@
       // =========================================
       // DATA DICTIONARY (Translation & Actions)
       // =========================================
-      let currentLang = 'en'; // Defaults to English
+      let currentLang = 'en';
       
       const imageOverlays = ["#tex-yosi", "#tex-parking", "#tex-noturn", "#tex-twoway", "#tex-narrowroad", "#tex-slippery", "#tex-pedestrian", "#tex-windingroad", "#tex-slipperyroad", "#tex-drowning"];
       
@@ -257,7 +267,7 @@
       function speakText(text) {
         synth.cancel();
         let utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = currentLang === 'en' ? 'en-US' : 'tl-PH'; // Adjusts accent
+        utterance.lang = currentLang === 'en' ? 'en-US' : 'tl-PH';
         synth.speak(utterance);
       }
 
@@ -266,39 +276,33 @@
       // =========================================
       const logListUI = document.getElementById('log-list');
       
-      // Load logs from local storage
       function getLogs() {
         return JSON.parse(localStorage.getItem('ar-scans')) || [];
       }
 
-      // Save a new scan
       function saveScanToLog(signIndex) {
         const logs = getLogs();
         const sign = signData[signIndex];
         
-        // Prevent spamming the log if they just scanned it today
         const alreadyScannedToday = logs.some(l => l.id === sign.id && new Date(l.time).toDateString() === new Date().toDateString());
         if(alreadyScannedToday) return;
 
         const newEntry = {
           id: sign.id, icon: sign.icon,
-          title: sign.en.title, // Base data saved in English
+          title: sign.en.title,
           time: new Date().toISOString(),
           location: "Searching location..."
         };
         
-        logs.unshift(newEntry); // Add to top
+        logs.unshift(newEntry);
         localStorage.setItem('ar-scans', JSON.stringify(logs));
         renderLogs();
 
-        // Get actual Geolocation
         if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition((pos) => {
-            // Rough reverse-geocode mock or just showing coordinates
             const lat = pos.coords.latitude.toFixed(4);
             const lng = pos.coords.longitude.toFixed(4);
             
-            // Update the entry in local storage
             const updatedLogs = getLogs();
             updatedLogs[0].location = `Lat: ${lat}, Lng: ${lng}`;
             localStorage.setItem('ar-scans', JSON.stringify(updatedLogs));
@@ -325,7 +329,6 @@
         }).join('');
       }
 
-      // UI Toggles for Logs
       document.getElementById('log-toggle').addEventListener('click', () => {
         renderLogs();
         document.getElementById('logbook-panel').classList.add('open');
@@ -341,12 +344,10 @@
       const scanGuide = document.querySelector('#scanning-guide');
       let activeSignIndex = null;
 
-      // Handle Translation Toggle
       document.getElementById('lang-toggle').addEventListener('click', (e) => {
         currentLang = currentLang === 'en' ? 'tl' : 'en';
         e.target.innerText = currentLang === 'en' ? '🌐 EN' : '🌐 TL';
         
-        // If a sign is currently scanned, update its text instantly
         if (activeSignIndex !== null) {
           updateUIOverlay(activeSignIndex);
         }
@@ -358,7 +359,6 @@
         
         let html = `<span class="icon">${data.icon}</span><h3>${langData.title}</h3><p>${langData.desc}</p>`;
         
-        // Feature 4: Append Action Button if it exists
         if(data.action) {
           html += `<a href="${data.action.url}" class="action-btn" target="_blank">${data.action.label}</a>`;
         }
@@ -367,11 +367,10 @@
         uiOverlay.classList.add("found-state");
       }
 
-      // Start Button
       document.getElementById('start-btn').addEventListener('click', () => {
         document.getElementById('onboarding-screen').classList.add('hidden');
         if (audioCtx.state === 'suspended') audioCtx.resume();
-        synth.speak(new SpeechSynthesisUtterance('')); // Unlock TTS
+        synth.speak(new SpeechSynthesisUtterance(''));
       });
 
       // AR Target Setup
@@ -403,7 +402,7 @@
           updateUIOverlay(i);
           speakText(`${signData[i][currentLang].title}. ${signData[i][currentLang].desc}`);
           
-          saveScanToLog(i); // Feature 1: Log the scan and get location
+          saveScanToLog(i); 
           
           scanGuide.style.opacity = "0";
         });
