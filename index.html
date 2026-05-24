@@ -2,61 +2,128 @@
 <html lang="en">
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>MindAR - 10 Image Targets</title>
-    <!-- A-Frame FrameWork -->
+    <title>MindAR - Premium UI/UX</title>
+    <!-- A-Frame & MindAR -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    <!-- MindAR for A-Frame -->
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+    
+    <!-- Google Fonts for modern typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    
     <style>
       body {
         margin: 0;
         overflow: hidden;
+        font-family: 'Poppins', sans-serif;
       }
+
+      /* 1. THE VIEWFINDER (Guides the user's camera) */
+      #scanning-guide {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 250px;
+        height: 250px;
+        z-index: 998;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+      }
+      /* Viewfinder Corners */
+      .corner {
+        position: absolute;
+        width: 40px;
+        height: 40px;
+        border-color: rgba(255, 255, 255, 0.8);
+        border-style: solid;
+        animation: pulse 2s infinite;
+      }
+      .top-left { top: 0; left: 0; border-width: 4px 0 0 4px; border-top-left-radius: 12px; }
+      .top-right { top: 0; right: 0; border-width: 4px 4px 0 0; border-top-right-radius: 12px; }
+      .bottom-left { bottom: 0; left: 0; border-width: 0 0 4px 4px; border-bottom-left-radius: 12px; }
+      .bottom-right { bottom: 0; right: 0; border-width: 0 4px 4px 0; border-bottom-right-radius: 12px; }
+
+      @keyframes pulse {
+        0% { transform: scale(1); opacity: 0.8; }
+        50% { transform: scale(1.05); opacity: 0.4; }
+        100% { transform: scale(1); opacity: 0.8; }
+      }
+
+      /* 2. THE PREMIUM INFO CARD (Glassmorphism) */
       #ui-overlay {
         position: absolute;
-        bottom: 30px;
+        bottom: 40px;
         left: 50%;
         transform: translateX(-50%);
         z-index: 999;
-        background: rgba(0, 0, 0, 0.8);
+        width: 85%;
+        max-width: 380px;
+        
+        /* Frosted Glass Effect */
+        background: rgba(20, 20, 25, 0.65);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        
         color: white;
-        padding: 15px 25px;
-        border-radius: 12px;
-        font-family: sans-serif;
-        font-size: 14px;
+        padding: 20px;
+        border-radius: 20px;
         text-align: center;
         pointer-events: none;
-        width: 80%;
-        max-width: 400px;
-        box-shadow: 0px 4px 15px rgba(0,0,0,0.3);
-        transition: background 0.3s ease;
+        
+        /* Smooth Bouncy Transition */
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       }
+
+      /* State when a sign is successfully scanned */
+      #ui-overlay.found-state {
+        background: rgba(16, 185, 129, 0.8); /* Vibrant Green */
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        transform: translateX(-50%) scale(1.02); /* Slight pop out effect */
+      }
+
       #ui-overlay h3 {
-        margin: 0 0 5px 0;
-        font-size: 18px;
-        color: #fff;
+        margin: 0 0 8px 0;
+        font-size: 20px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
       }
+
       #ui-overlay p {
         margin: 0;
         font-size: 14px;
-        color: #ddd;
-        line-height: 1.4;
+        color: rgba(255, 255, 255, 0.9);
+        line-height: 1.5;
+        font-weight: 400;
+      }
+
+      .icon {
+        font-size: 24px;
+        margin-bottom: 5px;
+        display: block;
       }
     </style>
   </head>
   <body>
-    <div id="ui-overlay">
-      <h3>Scanner Ready</h3>
-      <p>Point your camera at one of your 10 signs.</p>
+    
+    <!-- Visual Reticle to help users aim -->
+    <div id="scanning-guide">
+      <div class="corner top-left"></div>
+      <div class="corner top-right"></div>
+      <div class="corner bottom-left"></div>
+      <div class="corner bottom-right"></div>
     </div>
 
-    <!-- 
-      PRO TIP: If the sign itself is "shaking" while tracking, you can add 
-      filterMinCF: 0.0001; filterBeta: 0.001; inside mindar-image="" below 
-      to smooth out the camera tracking jitter.
-    -->
+    <!-- Enhanced UI Overlay -->
+    <div id="ui-overlay">
+      <span class="icon">📷</span>
+      <h3>Scanner Ready</h3>
+      <p>Align a sign within the frame to scan.</p>
+    </div>
+
     <a-scene 
-      mindar-image="imageTargetSrc: ./targets.mind; maxTrack: 1;" 
+      mindar-image="imageTargetSrc: ./targets.mind; maxTrack: 1; filterMinCF: 0.0001; filterBeta: 0.001;" 
       color-space="sRGB" 
       renderer="colorManagement: true, physicallyCorrectLights" 
       vr-mode-ui="enabled: false" 
@@ -76,13 +143,13 @@
       </a-assets>
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-      
       <a-entity id="target-container"></a-entity>
     </a-scene>
 
     <script>
       const container = document.querySelector('#target-container');
       const uiOverlay = document.querySelector('#ui-overlay');
+      const scanGuide = document.querySelector('#scanning-guide');
       const totalTargets = 10;
 
       const imageOverlays = [
@@ -91,16 +158,16 @@
       ];
 
       const signData = [
-        { title: "No Smoking", desc: "Smoking or using e-cigarettes is strictly prohibited in this area." },
-        { title: "Parking Area", desc: "Designated location where vehicles can be safely parked." },
-        { title: "No Turning", desc: "Vehicles are not permitted to make a turn at this intersection." },
-        { title: "Two-Way Traffic", desc: "Warning: You are entering a road with opposing traffic." },
-        { title: "Narrow Road Ahead", desc: "The road ahead narrows. Proceed with caution and yield if necessary." },
-        { title: "Slippery Surface", desc: "Watch your step! The surface here can be slippery." },
-        { title: "Pedestrian Crossing", desc: "Slow down and yield to pedestrians crossing the street." },
-        { title: "Winding Road", desc: "The road ahead curves continuously. Drive carefully." },
-        { title: "Slippery When Wet", desc: "Vehicles may lose traction here during rain. Reduce speed." },
-        { title: "Deep Water Hazard", desc: "Warning: Deep water area. Swimming is dangerous or prohibited." }
+        { icon: "🚭", title: "No Smoking", desc: "Smoking or using e-cigarettes is strictly prohibited in this area." },
+        { icon: "🅿️", title: "Parking Area", desc: "Designated location where vehicles can be safely parked." },
+        { icon: "🚫", title: "No Turning", desc: "Vehicles are not permitted to make a turn at this intersection." },
+        { icon: "↕️", title: "Two-Way Traffic", desc: "Warning: You are entering a road with opposing traffic." },
+        { icon: "⚠️", title: "Narrow Road Ahead", desc: "The road ahead narrows. Proceed with caution and yield if necessary." },
+        { icon: "🥾", title: "Slippery Surface", desc: "Watch your step! The surface here can be slippery." },
+        { icon: "🚶", title: "Pedestrian Crossing", desc: "Slow down and yield to pedestrians crossing the street." },
+        { icon: "🔄", title: "Winding Road", desc: "The road ahead curves continuously. Drive carefully." },
+        { icon: "🌧️", title: "Slippery When Wet", desc: "Vehicles may lose traction here during rain. Reduce speed." },
+        { icon: "🛟", title: "Deep Water Hazard", desc: "Warning: Deep water area. Swimming is dangerous or prohibited." }
       ];
 
       for (let i = 0; i < totalTargets; i++) {
@@ -111,7 +178,7 @@
         signContainer.setAttribute('rotation', '90 0 0');
         signContainer.setAttribute('scale', '1 1 1');
         
-        // FIX: Added 'from: 90 0 0;' and increased 'dur: 10000;' for a perfectly smooth, seamless rotation.
+        // Perfectly smooth 360 rotation
         signContainer.setAttribute('animation', 'property: rotation; from: 90 0 0; to: 90 360 0; loop: true; dur: 10000; easing: linear;');
 
         const metalRim = document.createElement('a-cylinder');
@@ -139,14 +206,21 @@
         signContainer.appendChild(backPlate);
         signContainer.appendChild(signFace);
 
+        // When target is detected
         targetEntity.addEventListener("targetFound", () => {
-          uiOverlay.innerHTML = `<h3>${signData[i].title}</h3><p>${signData[i].desc}</p>`;
-          uiOverlay.style.background = "rgba(16, 185, 129, 0.9)"; 
+          // Update text and add specific emoji
+          uiOverlay.innerHTML = `<span class="icon">${signData[i].icon}</span><h3>${signData[i].title}</h3><p>${signData[i].desc}</p>`;
+          // Trigger the CSS state change
+          uiOverlay.classList.add("found-state");
+          // Fade out the scanning guide
+          scanGuide.style.opacity = "0";
         });
 
+        // When target is lost
         targetEntity.addEventListener("targetLost", () => {
-          uiOverlay.innerHTML = `<h3>Scanner Ready</h3><p>Point your camera at one of your 10 signs.</p>`;
-          uiOverlay.style.background = "rgba(0, 0, 0, 0.8)";
+          uiOverlay.innerHTML = `<span class="icon">📷</span><h3>Scanner Ready</h3><p>Align a sign within the frame to scan.</p>`;
+          uiOverlay.classList.remove("found-state");
+          scanGuide.style.opacity = "1";
         });
 
         targetEntity.appendChild(signContainer);
