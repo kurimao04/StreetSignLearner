@@ -12,24 +12,45 @@
         margin: 0;
         overflow: hidden;
       }
+      /* Upgraded UI to look like an info card */
       #ui-overlay {
         position: absolute;
-        bottom: 20px;
+        bottom: 30px;
         left: 50%;
         transform: translateX(-50%);
         z-index: 999;
-        background: rgba(0, 0, 0, 0.7);
+        background: rgba(0, 0, 0, 0.8);
         color: white;
-        padding: 10px 20px;
-        border-radius: 20px;
+        padding: 15px 25px;
+        border-radius: 12px;
         font-family: sans-serif;
         font-size: 14px;
+        text-align: center;
         pointer-events: none;
+        width: 80%;
+        max-width: 400px;
+        box-shadow: 0px 4px 15px rgba(0,0,0,0.3);
+        transition: background 0.3s ease;
+      }
+      #ui-overlay h3 {
+        margin: 0 0 5px 0;
+        font-size: 18px;
+        color: #fff;
+      }
+      #ui-overlay p {
+        margin: 0;
+        font-size: 14px;
+        color: #ddd;
+        line-height: 1.4;
       }
     </style>
   </head>
   <body>
-    <div id="ui-overlay">Point your camera at one of your 10 targets</div>
+    <!-- Default prompt before scanning -->
+    <div id="ui-overlay">
+      <h3>Scanner Ready</h3>
+      <p>Point your camera at one of your 10 signs.</p>
+    </div>
 
     <a-scene 
       mindar-image="imageTargetSrc: ./targets.mind; maxTrack: 1;" 
@@ -38,7 +59,6 @@
       vr-mode-ui="enabled: false" 
       device-orientation-permission-ui="enabled: false"
     >
-      <!-- ASSET PRELOADER: Loads images into memory first -->
       <a-assets>
         <img id="tex-yosi" src="images/yosi.png">
         <img id="tex-parking" src="images/parking.png">
@@ -55,7 +75,6 @@
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
       
       <a-entity id="target-container"></a-entity>
-
     </a-scene>
 
     <script>
@@ -63,13 +82,25 @@
       const uiOverlay = document.querySelector('#ui-overlay');
       const totalTargets = 10;
 
-      // UPDATED: Now references the IDs from the <a-assets> block
+      // 1. Array of your image textures
       const imageOverlays = [
-        "#tex-yosi", 
-        "#tex-parking", 
-        "#tex-noturn", "#tex-twoway", "#tex-narrowroad",
-        "#tex-slippery", "#tex-pedestrian", "#tex-windingroad",
-        "#tex-slipperyroad", "#tex-drowning"
+        "#tex-yosi", "#tex-parking", "#tex-noturn", "#tex-twoway", "#tex-narrowroad",
+        "#tex-slippery", "#tex-pedestrian", "#tex-windingroad", "#tex-slipperyroad", "#tex-drowning"
+      ];
+
+      // 2. NEW: Array of titles and explanations for each sign
+      // Note: Make sure the order matches your image array exactly!
+      const signData = [
+        { title: "No Smoking", desc: "Smoking or using e-cigarettes is strictly prohibited in this area." },
+        { title: "Parking Area", desc: "Designated location where vehicles can be safely parked." },
+        { title: "No Turning", desc: "Vehicles are not permitted to make a turn at this intersection." },
+        { title: "Two-Way Traffic", desc: "Warning: You are entering a road with opposing traffic." },
+        { title: "Narrow Road Ahead", desc: "The road ahead narrows. Proceed with caution and yield if necessary." },
+        { title: "Slippery Surface", desc: "Watch your step! The surface here can be slippery." },
+        { title: "Pedestrian Crossing", desc: "Slow down and yield to pedestrians crossing the street." },
+        { title: "Winding Road", desc: "The road ahead curves continuously. Drive carefully." },
+        { title: "Slippery When Wet", desc: "Vehicles may lose traction here during rain. Reduce speed." },
+        { title: "Deep Water Hazard", desc: "Warning: Deep water area. Swimming is dangerous or prohibited." }
       ];
 
       for (let i = 0; i < totalTargets; i++) {
@@ -108,14 +139,18 @@
         signContainer.appendChild(backPlate);
         signContainer.appendChild(signFace);
 
+        // 3. UPDATED: When the target is found, inject the specific title and description
         targetEntity.addEventListener("targetFound", () => {
-          uiOverlay.innerText = `Scanning: Target #${i + 1}`;
-          uiOverlay.style.background = "rgba(16, 185, 129, 0.85)";
+          uiOverlay.innerHTML = `<h3>${signData[i].title}</h3><p>${signData[i].desc}</p>`;
+          // Changes to a green background to indicate a successful scan
+          uiOverlay.style.background = "rgba(16, 185, 129, 0.9)"; 
         });
 
+        // 4. UPDATED: When the target is lost, reset the UI
         targetEntity.addEventListener("targetLost", () => {
-          uiOverlay.innerText = "Point your camera at one of your 10 targets";
-          uiOverlay.style.background = "rgba(0, 0, 0, 0.7)";
+          uiOverlay.innerHTML = `<h3>Scanner Ready</h3><p>Point your camera at one of your 10 signs.</p>`;
+          // Reverts back to the dark background
+          uiOverlay.style.background = "rgba(0, 0, 0, 0.8)";
         });
 
         targetEntity.appendChild(signContainer);
