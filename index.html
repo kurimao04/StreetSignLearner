@@ -4,14 +4,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>MindAR - Premium Interactive UI/UX</title>
     
-    <!-- A-Frame & MindAR -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
     
-    <!-- A-Frame Particle System -->
     <script src="https://unpkg.com/aframe-particle-system-component@1.1.3/dist/aframe-particle-system-component.min.js"></script>
     
-    <!-- Google Fonts for modern typography -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     
     <style>
@@ -97,7 +94,6 @@
         box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
       }
       .start-btn:hover { background: #0ea5e9; transform: scale(1.05); box-shadow: 0 4px 15px rgba(14, 165, 233, 0.4); }
-      .start-btn:disabled { background: #6b7280; cursor: not-allowed; transform: none; box-shadow: none; }
 
       #onboarding.hidden { opacity: 0; visibility: hidden; }
 
@@ -189,14 +185,13 @@
         cursor: pointer;
         margin: 5px auto 0;
         transition: background 0.2s;
-        pointer-events: auto; /* Ensure button is clickable despite overlay pointer-events */
+        pointer-events: auto;
       }
       .action-btn:hover { background: rgba(255, 255, 255, 0.4); }
     </style>
   </head>
   <body>
     
-    <!-- Onboarding Screen -->
     <div id="onboarding">
       <div class="orb"></div>
       <div class="orb"></div>
@@ -215,10 +210,8 @@
       <div class="corner bottom-right"></div>
     </div>
 
-    <!-- Distance Warning -->
     <div id="distance-warning">⚠️ Move a little closer</div>
 
-    <!-- Enhanced UI Overlay -->
     <div id="ui-overlay">
       <span class="icon" id="ui-icon">📷</span>
       <h3 id="ui-title">Scanner Ready</h3>
@@ -226,7 +219,6 @@
       <button class="action-btn" id="learn-btn">Tap sign to view guide</button>
     </div>
 
-    <!-- A-Frame Scene with uiLoading/uiScanning disabled -->
     <a-scene 
       mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiLoading: no; uiScanning: no; maxTrack: 1; filterMinCF: 0.0001; filterBeta: 0.001;" 
       color-space="sRGB" 
@@ -247,10 +239,8 @@
         <img id="tex-drowning" src="images/drowning.png">
       </a-assets>
 
-      <!-- Raycaster for tapping the 3D model -->
       <a-camera position="0 0 0" look-controls="enabled: false" cursor="rayOrigin: mouse;" raycaster="objects: .clickable"></a-camera>
       
-      <!-- Scene Lighting for Shadows -->
       <a-entity light="type: ambient; intensity: 0.5;"></a-entity>
       <a-entity light="type: directional; castShadow: true; intensity: 0.8; shadowBias: -0.0005;" position="0 5 2"></a-entity>
 
@@ -287,34 +277,14 @@
       let activeTargetEntity = null;
       const totalTargets = 10;
 
-      // EXPLICIT CAMERA PERMISSION CHECK
-      startBtn.addEventListener('click', async () => {
-        startBtn.innerText = "Requesting Camera...";
-        startBtn.disabled = true;
-
-        try {
-          // 1. Force the browser to ask for camera permission right now
-          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-          
-          // 2. We got permission! Stop this temporary stream so MindAR can take over
-          stream.getTracks().forEach(track => track.stop());
-
-          // 3. Hide onboarding, show UI
-          onboarding.classList.add('hidden');
-          scanGuide.style.opacity = "1";
-          uiOverlay.style.opacity = "1";
-          
-          // 4. Start MindAR engine
-          const arSystem = sceneEl.systems["mindar-image-system"];
-          arSystem.start();
-
-        } catch (err) {
-          // If the user clicks "Block" or the browser refuses (e.g. no HTTPS)
-          alert("Camera access was denied or is not available. Please allow camera access in your browser settings or ensure you are using HTTPS/localhost to use this app.");
-          startBtn.innerText = "Start Scanning";
-          startBtn.disabled = false;
-          console.error("Camera permission error:", err);
-        }
+      // CLEAN AR START LOGIC (MindAR will trigger the prompt natively now)
+      startBtn.addEventListener('click', () => {
+        onboarding.classList.add('hidden');
+        scanGuide.style.opacity = "1";
+        uiOverlay.style.opacity = "1";
+        
+        const arSystem = sceneEl.systems["mindar-image-system"];
+        arSystem.start(); // Handing off tracking & permission directly to MindAR
       });
 
       const imageOverlays = [
