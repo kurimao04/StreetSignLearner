@@ -15,9 +15,76 @@
         margin: 0;
         overflow: hidden;
         font-family: 'Poppins', sans-serif;
+        background-color: #000; /* Dark background before camera starts */
       }
 
-      /* 1. THE VIEWFINDER (Guides the user's camera) */
+      /* 1. ONBOARDING SCREEN (New) */
+      #onboarding {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><rect width="100%" height="100%" fill="%231a1a24" /></svg>') center/cover;
+        z-index: 9999;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        transition: opacity 0.5s ease, visibility 0.5s ease;
+      }
+
+      #onboarding.hidden {
+        opacity: 0;
+        visibility: hidden;
+      }
+
+      .onboarding-card {
+        background: rgba(20, 20, 25, 0.7);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+        color: white;
+        padding: 40px 30px;
+        border-radius: 24px;
+        text-align: center;
+        width: 85%;
+        max-width: 360px;
+      }
+
+      .onboarding-card h2 {
+        margin: 0 0 10px 0;
+        font-size: 24px;
+      }
+
+      .onboarding-card p {
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.8);
+        line-height: 1.6;
+        margin-bottom: 30px;
+      }
+
+      .start-btn {
+        background: #10b981; /* Vibrant Green */
+        color: white;
+        border: none;
+        padding: 14px 32px;
+        font-size: 16px;
+        font-weight: 600;
+        border-radius: 30px;
+        cursor: pointer;
+        font-family: 'Poppins', sans-serif;
+        transition: transform 0.2s ease, background 0.2s ease;
+        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+      }
+
+      .start-btn:hover {
+        background: #0ea5e9;
+        transform: scale(1.05);
+        box-shadow: 0 4px 15px rgba(14, 165, 233, 0.4);
+      }
+
+      /* 2. THE VIEWFINDER (Guides the user's camera) */
       #scanning-guide {
         position: absolute;
         top: 50%;
@@ -28,6 +95,7 @@
         z-index: 998;
         pointer-events: none;
         transition: opacity 0.3s ease;
+        opacity: 0; /* Hidden initially, shown after onboarding */
       }
       /* Viewfinder Corners */
       .corner {
@@ -49,7 +117,7 @@
         100% { transform: scale(1); opacity: 0.8; }
       }
 
-      /* 2. THE PREMIUM INFO CARD (Glassmorphism) */
+      /* 3. THE PREMIUM INFO CARD (Glassmorphism) */
       #ui-overlay {
         position: absolute;
         bottom: 40px;
@@ -59,7 +127,6 @@
         width: 85%;
         max-width: 380px;
         
-        /* Frosted Glass Effect */
         background: rgba(20, 20, 25, 0.65);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
@@ -72,41 +139,32 @@
         text-align: center;
         pointer-events: none;
         
-        /* Smooth Bouncy Transition */
         transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        opacity: 0; /* Hidden initially */
       }
 
-      /* State when a sign is successfully scanned */
       #ui-overlay.found-state {
-        background: rgba(16, 185, 129, 0.8); /* Vibrant Green */
+        background: rgba(16, 185, 129, 0.8); 
         border: 1px solid rgba(255, 255, 255, 0.4);
-        transform: translateX(-50%) scale(1.02); /* Slight pop out effect */
+        transform: translateX(-50%) scale(1.02); 
       }
 
-      #ui-overlay h3 {
-        margin: 0 0 8px 0;
-        font-size: 20px;
-        font-weight: 600;
-        letter-spacing: 0.5px;
-      }
-
-      #ui-overlay p {
-        margin: 0;
-        font-size: 14px;
-        color: rgba(255, 255, 255, 0.9);
-        line-height: 1.5;
-        font-weight: 400;
-      }
-
-      .icon {
-        font-size: 24px;
-        margin-bottom: 5px;
-        display: block;
-      }
+      #ui-overlay h3 { margin: 0 0 8px 0; font-size: 20px; font-weight: 600; }
+      #ui-overlay p { margin: 0; font-size: 14px; color: rgba(255, 255, 255, 0.9); line-height: 1.5; font-weight: 400; }
+      .icon { font-size: 24px; margin-bottom: 5px; display: block; }
     </style>
   </head>
   <body>
     
+    <!-- Onboarding Screen -->
+    <div id="onboarding">
+      <div class="onboarding-card">
+        <h2>AR Sign Scanner</h2>
+        <p>Discover interactive information hidden in the signs around you. <br><br><b>Please allow camera access</b> when prompted to begin scanning.</p>
+        <button class="start-btn" id="start-btn">Start Scanning</button>
+      </div>
+    </div>
+
     <!-- Visual Reticle to help users aim -->
     <div id="scanning-guide">
       <div class="corner top-left"></div>
@@ -122,8 +180,9 @@
       <p>Align a sign within the frame to scan.</p>
     </div>
 
+    <!-- Added 'autoStart: false' to prevent camera from starting immediately -->
     <a-scene 
-      mindar-image="imageTargetSrc: ./targets.mind; maxTrack: 1; filterMinCF: 0.0001; filterBeta: 0.001;" 
+      mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; maxTrack: 1; filterMinCF: 0.0001; filterBeta: 0.001;" 
       color-space="sRGB" 
       renderer="colorManagement: true, physicallyCorrectLights" 
       vr-mode-ui="enabled: false" 
@@ -150,7 +209,25 @@
       const container = document.querySelector('#target-container');
       const uiOverlay = document.querySelector('#ui-overlay');
       const scanGuide = document.querySelector('#scanning-guide');
+      const onboarding = document.querySelector('#onboarding');
+      const startBtn = document.querySelector('#start-btn');
+      const sceneEl = document.querySelector('a-scene');
+
       const totalTargets = 10;
+
+      // Handle the Onboarding "Start" button click
+      startBtn.addEventListener('click', () => {
+        // Fade out the onboarding screen
+        onboarding.classList.add('hidden');
+        
+        // Show the AR UI elements
+        scanGuide.style.opacity = "1";
+        uiOverlay.style.opacity = "1";
+
+        // Manually start the MindAR system (this triggers the camera permission prompt)
+        const arSystem = sceneEl.systems["mindar-image-system"];
+        arSystem.start();
+      });
 
       const imageOverlays = [
         "#tex-yosi", "#tex-parking", "#tex-noturn", "#tex-twoway", "#tex-narrowroad",
@@ -198,8 +275,8 @@
 
         const signFace = document.createElement('a-circle');
         signFace.setAttribute('radius', '0.5');
-        signFace.setAttribute('position', '0 0.03 0');    
-        signFace.setAttribute('rotation', '-90 0 0');    
+        signFace.setAttribute('position', '0 0.03 0');  
+        signFace.setAttribute('rotation', '-90 0 0');  
         signFace.setAttribute('material', `src: ${imageOverlays[i]}; roughness: 0.6; metalness: 0.1;`);
 
         signContainer.appendChild(metalRim);
@@ -208,11 +285,8 @@
 
         // When target is detected
         targetEntity.addEventListener("targetFound", () => {
-          // Update text and add specific emoji
           uiOverlay.innerHTML = `<span class="icon">${signData[i].icon}</span><h3>${signData[i].title}</h3><p>${signData[i].desc}</p>`;
-          // Trigger the CSS state change
           uiOverlay.classList.add("found-state");
-          // Fade out the scanning guide
           scanGuide.style.opacity = "0";
         });
 
