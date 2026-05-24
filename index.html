@@ -188,6 +188,7 @@
         cursor: pointer;
         margin: 5px auto 0;
         transition: background 0.2s;
+        pointer-events: auto; /* Ensure button is clickable despite overlay pointer-events */
       }
       .action-btn:hover { background: rgba(255, 255, 255, 0.4); }
     </style>
@@ -224,9 +225,9 @@
       <button class="action-btn" id="learn-btn">Tap sign to view guide</button>
     </div>
 
-    <!-- A-Frame Scene with shadows enabled -->
+    <!-- A-Frame Scene with uiLoading/uiScanning disabled to fix the infinite loading loop -->
     <a-scene 
-      mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; maxTrack: 1; filterMinCF: 0.0001; filterBeta: 0.001;" 
+      mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiLoading: no; uiScanning: no; maxTrack: 1; filterMinCF: 0.0001; filterBeta: 0.001;" 
       color-space="sRGB" 
       renderer="colorManagement: true, physicallyCorrectLights: true, shadowMapType: pcfsoft" 
       vr-mode-ui="enabled: false" 
@@ -415,12 +416,9 @@
       }
 
       // Distance Checker Loop
-      // MindAR scales the camera/target based on physical distance.
-      // We check the relative position vector length to estimate distance.
       setInterval(() => {
         if (activeTargetEntity) {
           const distance = activeTargetEntity.object3D.position.length();
-          // If distance value gets too high, the user is too far.
           if (distance > 2.5) { 
             distWarning.style.opacity = '1';
           } else {
