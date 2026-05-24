@@ -17,7 +17,102 @@
         font-family: 'Poppins', sans-serif;
       }
 
-      /* 1. THE VIEWFINDER (Guides the user's camera) */
+      /* =========================================
+         ONBOARDING SCREEN (Wireframe Minimalist)
+         ========================================= */
+      #onboarding-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: #fafafa;
+        /* Wireframe grid background */
+        background-image: 
+          linear-gradient(#d1d5db 1px, transparent 1px), 
+          linear-gradient(90deg, #d1d5db 1px, transparent 1px);
+        background-size: 40px 40px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        padding: 20px;
+        transition: opacity 0.5s ease, visibility 0.5s ease;
+      }
+
+      #onboarding-screen.hidden {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+
+      .onboarding-card {
+        background: white;
+        border: 2px solid #111;
+        padding: 40px 30px;
+        box-shadow: 8px 8px 0px #111; /* Brutalist/Minimalist shadow */
+        max-width: 350px;
+      }
+
+      .onboarding-card h1 {
+        margin: 0 0 10px 0;
+        font-size: 24px;
+        color: #111;
+      }
+
+      .onboarding-card p {
+        margin: 0 0 30px 0;
+        font-size: 14px;
+        color: #555;
+      }
+
+      .start-btn {
+        background: transparent;
+        border: 2px solid #111;
+        color: #111;
+        padding: 12px 24px;
+        font-family: 'Poppins', sans-serif;
+        font-weight: 600;
+        font-size: 16px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .start-btn:hover {
+        background: #111;
+        color: white;
+      }
+
+      /* =========================================
+         DISTANCE WARNING UI
+         ========================================= */
+      #distance-warning {
+        position: absolute;
+        top: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(245, 158, 11, 0.9); /* Amber warning */
+        color: white;
+        padding: 8px 20px;
+        border-radius: 30px;
+        font-size: 14px;
+        font-weight: 600;
+        z-index: 1000;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      }
+
+      #distance-warning.visible {
+        opacity: 1;
+      }
+
+      /* =========================================
+         EXISTING AR UI ELEMENTS
+         ========================================= */
       #scanning-guide {
         position: absolute;
         top: 50%;
@@ -29,7 +124,7 @@
         pointer-events: none;
         transition: opacity 0.3s ease;
       }
-      /* Viewfinder Corners */
+      
       .corner {
         position: absolute;
         width: 40px;
@@ -38,6 +133,7 @@
         border-style: solid;
         animation: pulse 2s infinite;
       }
+      
       .top-left { top: 0; left: 0; border-width: 4px 0 0 4px; border-top-left-radius: 12px; }
       .top-right { top: 0; right: 0; border-width: 4px 4px 0 0; border-top-right-radius: 12px; }
       .bottom-left { bottom: 0; left: 0; border-width: 0 0 4px 4px; border-bottom-left-radius: 12px; }
@@ -49,7 +145,6 @@
         100% { transform: scale(1); opacity: 0.8; }
       }
 
-      /* 2. THE PREMIUM INFO CARD (Glassmorphism) */
       #ui-overlay {
         position: absolute;
         bottom: 40px;
@@ -58,55 +153,44 @@
         z-index: 999;
         width: 85%;
         max-width: 380px;
-        
-        /* Frosted Glass Effect */
         background: rgba(20, 20, 25, 0.65);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
         border: 1px solid rgba(255, 255, 255, 0.15);
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-        
         color: white;
         padding: 20px;
         border-radius: 20px;
         text-align: center;
         pointer-events: none;
-        
-        /* Smooth Bouncy Transition */
         transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       }
 
-      /* State when a sign is successfully scanned */
       #ui-overlay.found-state {
-        background: rgba(16, 185, 129, 0.8); /* Vibrant Green */
+        background: rgba(16, 185, 129, 0.8);
         border: 1px solid rgba(255, 255, 255, 0.4);
-        transform: translateX(-50%) scale(1.02); /* Slight pop out effect */
+        transform: translateX(-50%) scale(1.02);
       }
 
-      #ui-overlay h3 {
-        margin: 0 0 8px 0;
-        font-size: 20px;
-        font-weight: 600;
-        letter-spacing: 0.5px;
-      }
-
-      #ui-overlay p {
-        margin: 0;
-        font-size: 14px;
-        color: rgba(255, 255, 255, 0.9);
-        line-height: 1.5;
-        font-weight: 400;
-      }
-
-      .icon {
-        font-size: 24px;
-        margin-bottom: 5px;
-        display: block;
-      }
+      #ui-overlay h3 { margin: 0 0 8px 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px; }
+      #ui-overlay p { margin: 0; font-size: 14px; color: rgba(255, 255, 255, 0.9); line-height: 1.5; font-weight: 400; }
+      .icon { font-size: 24px; margin-bottom: 5px; display: block; }
     </style>
   </head>
   <body>
     
+    <!-- Wireframe Onboarding Screen -->
+    <div id="onboarding-screen">
+      <div class="onboarding-card">
+        <h1>AR Sign Scanner</h1>
+        <p>Point your camera at supported street signs to reveal safety information and rules in Augmented Reality.</p>
+        <button class="start-btn" id="start-btn">Start Experience</button>
+      </div>
+    </div>
+
+    <!-- Distance Warning -->
+    <div id="distance-warning">⚠️ Move closer to the sign</div>
+
     <!-- Visual Reticle to help users aim -->
     <div id="scanning-guide">
       <div class="corner top-left"></div>
@@ -147,10 +231,21 @@
     </a-scene>
 
     <script>
+      // UI Elements
       const container = document.querySelector('#target-container');
       const uiOverlay = document.querySelector('#ui-overlay');
       const scanGuide = document.querySelector('#scanning-guide');
+      const onboardingScreen = document.querySelector('#onboarding-screen');
+      const startBtn = document.querySelector('#start-btn');
+      const distanceWarning = document.querySelector('#distance-warning');
+      
       const totalTargets = 10;
+      let activeTarget3D = null; // Used to track the currently visible target for distance checking
+
+      // Dismiss onboarding screen
+      startBtn.addEventListener('click', () => {
+        onboardingScreen.classList.add('hidden');
+      });
 
       const imageOverlays = [
         "#tex-yosi", "#tex-parking", "#tex-noturn", "#tex-twoway", "#tex-narrowroad",
@@ -208,16 +303,18 @@
 
         // When target is detected
         targetEntity.addEventListener("targetFound", () => {
-          // Update text and add specific emoji
+          activeTarget3D = targetEntity.object3D; // Start tracking this target for distance
+          
           uiOverlay.innerHTML = `<span class="icon">${signData[i].icon}</span><h3>${signData[i].title}</h3><p>${signData[i].desc}</p>`;
-          // Trigger the CSS state change
           uiOverlay.classList.add("found-state");
-          // Fade out the scanning guide
           scanGuide.style.opacity = "0";
         });
 
         // When target is lost
         targetEntity.addEventListener("targetLost", () => {
+          activeTarget3D = null; // Stop tracking
+          distanceWarning.classList.remove('visible'); // Hide warning immediately
+          
           uiOverlay.innerHTML = `<span class="icon">📷</span><h3>Scanner Ready</h3><p>Align a sign within the frame to scan.</p>`;
           uiOverlay.classList.remove("found-state");
           scanGuide.style.opacity = "1";
@@ -226,6 +323,34 @@
         targetEntity.appendChild(signContainer);
         container.appendChild(targetEntity);
       }
+
+      // =========================================
+      // DISTANCE CHECKING LOOP
+      // =========================================
+      // This function continuously runs. If an image is being tracked, it calculates the distance 
+      // from the camera (which defaults to 0,0,0 in MindAR) to the target's position.
+      function trackDistance() {
+        if (activeTarget3D) {
+          // Calculate the straight-line distance from origin to the target
+          const distance = activeTarget3D.position.length();
+          
+          // The threshold value (e.g., 3.5) depends heavily on the physical size 
+          // of the real-world marker. Adjust this number up or down to fine-tune UX!
+          const distanceThreshold = 3.5; 
+
+          if (distance > distanceThreshold) {
+            distanceWarning.classList.add('visible');
+          } else {
+            distanceWarning.classList.remove('visible');
+          }
+        }
+        // Call next frame
+        requestAnimationFrame(trackDistance);
+      }
+      
+      // Kick off the tracking loop
+      trackDistance();
+
     </script>
   </body>
 </html>
