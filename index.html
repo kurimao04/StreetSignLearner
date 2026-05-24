@@ -50,6 +50,11 @@
       <p>Point your camera at one of your 10 signs.</p>
     </div>
 
+    <!-- 
+      PRO TIP: If the sign itself is "shaking" while tracking, you can add 
+      filterMinCF: 0.0001; filterBeta: 0.001; inside mindar-image="" below 
+      to smooth out the camera tracking jitter.
+    -->
     <a-scene 
       mindar-image="imageTargetSrc: ./targets.mind; maxTrack: 1;" 
       color-space="sRGB" 
@@ -106,7 +111,8 @@
         signContainer.setAttribute('rotation', '90 0 0');
         signContainer.setAttribute('scale', '1 1 1');
         
-        signContainer.setAttribute('animation', 'property: rotation; to: 90 360 0; loop: true; dur: 8000; easing: linear;');
+        // FIX: Added 'from: 90 0 0;' and increased 'dur: 10000;' for a perfectly smooth, seamless rotation.
+        signContainer.setAttribute('animation', 'property: rotation; from: 90 0 0; to: 90 360 0; loop: true; dur: 10000; easing: linear;');
 
         const metalRim = document.createElement('a-cylinder');
         metalRim.setAttribute('radius', '0.51');       
@@ -117,11 +123,9 @@
         metalRim.setAttribute('metalness', '0.8');     
         metalRim.setAttribute('roughness', '0.4');
 
-        // UPDATED: The back plate now acts as a second sign face
         const backPlate = document.createElement('a-circle');
         backPlate.setAttribute('radius', '0.5');
         backPlate.setAttribute('position', '0 -0.029 0'); 
-        // We add 180 to the Z-axis rotation so the image is perfectly right-side-up when spun around
         backPlate.setAttribute('rotation', '90 0 180');     
         backPlate.setAttribute('material', `src: ${imageOverlays[i]}; roughness: 0.6; metalness: 0.1;`);
 
