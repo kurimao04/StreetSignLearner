@@ -1,24 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>MindAR - Premium UI/UX</title>
+    <!-- Enhanced Meta Tag for Native App Feel -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>MindAR - Premium Mobile UI/UX</title>
+    
     <!-- A-Frame & MindAR -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
     
-    <!-- Google Fonts for modern typography -->
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     
     <style>
+      /* =========================================
+         BASE APP STYLES (Native Feel)
+         ========================================= */
+      * {
+        box-sizing: border-box;
+      }
+
       body {
         margin: 0;
         overflow: hidden;
         font-family: 'Poppins', sans-serif;
+        background-color: #000; /* Prevents white flash */
+        
+        /* Disables pull-to-refresh and selection on mobile */
+        overscroll-behavior-y: none;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+        touch-action: none;
       }
 
       /* =========================================
-         ONBOARDING SCREEN (Wireframe Minimalist)
+         ONBOARDING SCREEN (Responsive Wireframe)
          ========================================= */
       #onboarding-screen {
         position: fixed;
@@ -27,18 +44,17 @@
         width: 100%;
         height: 100%;
         background-color: #fafafa;
-        /* Wireframe grid background */
         background-image: 
           linear-gradient(#d1d5db 1px, transparent 1px), 
           linear-gradient(90deg, #d1d5db 1px, transparent 1px);
-        background-size: 40px 40px;
+        background-size: clamp(30px, 8vw, 50px) clamp(30px, 8vw, 50px);
         z-index: 9999;
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
         text-align: center;
-        padding: 20px;
+        padding: env(safe-area-inset-top) 20px env(safe-area-inset-bottom);
         transition: opacity 0.5s ease, visibility 0.5s ease;
       }
 
@@ -51,130 +67,182 @@
       .onboarding-card {
         background: white;
         border: 2px solid #111;
-        padding: 40px 30px;
-        box-shadow: 8px 8px 0px #111; /* Brutalist/Minimalist shadow */
-        max-width: 350px;
+        padding: clamp(20px, 6vw, 40px);
+        width: 90%;
+        max-width: 400px;
+        border-radius: 12px;
+        box-shadow: 6px 6px 0px #111;
+        transform: translateY(0);
+        animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+
+      @keyframes slideUp {
+        0% { transform: translateY(30px); opacity: 0; }
+        100% { transform: translateY(0); opacity: 1; }
       }
 
       .onboarding-card h1 {
-        margin: 0 0 10px 0;
-        font-size: 24px;
+        margin: 0 0 12px 0;
+        font-size: clamp(22px, 5vw, 28px);
         color: #111;
       }
 
       .onboarding-card p {
         margin: 0 0 30px 0;
-        font-size: 14px;
-        color: #555;
+        font-size: clamp(14px, 3.5vw, 16px);
+        color: #444;
+        line-height: 1.6;
       }
 
       .start-btn {
         background: transparent;
         border: 2px solid #111;
         color: #111;
-        padding: 12px 24px;
+        padding: 14px 28px;
         font-family: 'Poppins', sans-serif;
         font-weight: 600;
-        font-size: 16px;
+        font-size: clamp(15px, 4vw, 17px);
+        border-radius: 8px;
         cursor: pointer;
         transition: all 0.2s ease;
+        width: 100%;
+        touch-action: manipulation;
       }
 
-      .start-btn:hover {
+      .start-btn:active {
         background: #111;
         color: white;
+        transform: translateY(2px);
+        box-shadow: 2px 2px 0px #111;
       }
 
       /* =========================================
-         DISTANCE WARNING UI
+         DISTANCE WARNING UI (Notch-Safe)
          ========================================= */
       #distance-warning {
         position: absolute;
-        top: 30px;
+        /* Accommodates iPhone notches/dynamic island */
+        top: max(20px, env(safe-area-inset-top));
         left: 50%;
-        transform: translateX(-50%);
-        background: rgba(245, 158, 11, 0.9); /* Amber warning */
+        transform: translateX(-50%) translateY(-20px);
+        
+        background: rgba(245, 158, 11, 0.95);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
         color: white;
-        padding: 8px 20px;
+        padding: 10px 24px;
         border-radius: 30px;
-        font-size: 14px;
+        font-size: clamp(13px, 3.5vw, 15px);
         font-weight: 600;
+        white-space: nowrap;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+        
         z-index: 1000;
         opacity: 0;
         pointer-events: none;
-        transition: opacity 0.3s ease;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
       }
 
       #distance-warning.visible {
         opacity: 1;
+        transform: translateX(-50%) translateY(0);
       }
 
       /* =========================================
-         EXISTING AR UI ELEMENTS
+         THE VIEWFINDER (Responsive Reticle)
          ========================================= */
       #scanning-guide {
         position: absolute;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        width: 250px;
-        height: 250px;
+        /* Dynamically scales based on screen size */
+        width: clamp(200px, 65vw, 300px);
+        height: clamp(200px, 65vw, 300px);
         z-index: 998;
         pointer-events: none;
-        transition: opacity 0.3s ease;
+        transition: opacity 0.4s ease;
       }
       
       .corner {
         position: absolute;
-        width: 40px;
-        height: 40px;
-        border-color: rgba(255, 255, 255, 0.8);
+        width: clamp(30px, 10vw, 50px);
+        height: clamp(30px, 10vw, 50px);
+        border-color: rgba(255, 255, 255, 0.9);
         border-style: solid;
         animation: pulse 2s infinite;
       }
       
-      .top-left { top: 0; left: 0; border-width: 4px 0 0 4px; border-top-left-radius: 12px; }
-      .top-right { top: 0; right: 0; border-width: 4px 4px 0 0; border-top-right-radius: 12px; }
-      .bottom-left { bottom: 0; left: 0; border-width: 0 0 4px 4px; border-bottom-left-radius: 12px; }
-      .bottom-right { bottom: 0; right: 0; border-width: 0 4px 4px 0; border-bottom-right-radius: 12px; }
+      .top-left { top: 0; left: 0; border-width: 4px 0 0 4px; border-top-left-radius: 16px; }
+      .top-right { top: 0; right: 0; border-width: 4px 4px 0 0; border-top-right-radius: 16px; }
+      .bottom-left { bottom: 0; left: 0; border-width: 0 0 4px 4px; border-bottom-left-radius: 16px; }
+      .bottom-right { bottom: 0; right: 0; border-width: 0 4px 4px 0; border-bottom-right-radius: 16px; }
 
       @keyframes pulse {
-        0% { transform: scale(1); opacity: 0.8; }
-        50% { transform: scale(1.05); opacity: 0.4; }
-        100% { transform: scale(1); opacity: 0.8; }
+        0% { transform: scale(1); opacity: 0.9; }
+        50% { transform: scale(1.08); opacity: 0.4; }
+        100% { transform: scale(1); opacity: 0.9; }
       }
 
+      /* =========================================
+         THE PREMIUM INFO CARD (Safe-Area Aware)
+         ========================================= */
       #ui-overlay {
         position: absolute;
-        bottom: 40px;
+        /* Accommodates iPhone bottom swipe bar */
+        bottom: max(30px, env(safe-area-inset-bottom) + 15px);
         left: 50%;
-        transform: translateX(-50%);
+        transform: translateX(-50%) translateY(20px);
         z-index: 999;
-        width: 85%;
-        max-width: 380px;
-        background: rgba(20, 20, 25, 0.65);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        
+        width: 90%;
+        max-width: 420px;
+        
+        background: rgba(20, 20, 25, 0.75);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+        border-radius: 24px;
+        
         color: white;
-        padding: 20px;
-        border-radius: 20px;
+        padding: clamp(15px, 5vw, 25px);
         text-align: center;
         pointer-events: none;
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        
+        /* Smooth Bouncy Transition */
+        transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        opacity: 0.9;
       }
 
       #ui-overlay.found-state {
-        background: rgba(16, 185, 129, 0.8);
-        border: 1px solid rgba(255, 255, 255, 0.4);
-        transform: translateX(-50%) scale(1.02);
+        background: rgba(16, 185, 129, 0.9); /* Vibrant Green */
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        transform: translateX(-50%) translateY(0) scale(1.03); 
+        opacity: 1;
+        box-shadow: 0 15px 50px rgba(16, 185, 129, 0.3);
       }
 
-      #ui-overlay h3 { margin: 0 0 8px 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px; }
-      #ui-overlay p { margin: 0; font-size: 14px; color: rgba(255, 255, 255, 0.9); line-height: 1.5; font-weight: 400; }
-      .icon { font-size: 24px; margin-bottom: 5px; display: block; }
+      #ui-overlay h3 { 
+        margin: 0 0 6px 0; 
+        font-size: clamp(18px, 5vw, 22px); 
+        font-weight: 600; 
+        letter-spacing: 0.5px; 
+      }
+      
+      #ui-overlay p { 
+        margin: 0; 
+        font-size: clamp(13px, 3.5vw, 15px); 
+        color: rgba(255, 255, 255, 0.95); 
+        line-height: 1.5; 
+        font-weight: 400; 
+      }
+      
+      .icon { 
+        font-size: clamp(28px, 8vw, 32px); 
+        margin-bottom: 8px; 
+        display: block; 
+      }
     </style>
   </head>
   <body>
@@ -206,6 +274,7 @@
       <p>Align a sign within the frame to scan.</p>
     </div>
 
+    <!-- AR Scene -->
     <a-scene 
       mindar-image="imageTargetSrc: ./targets.mind; maxTrack: 1; filterMinCF: 0.0001; filterBeta: 0.001;" 
       color-space="sRGB" 
@@ -231,7 +300,6 @@
     </a-scene>
 
     <script>
-      // UI Elements
       const container = document.querySelector('#target-container');
       const uiOverlay = document.querySelector('#ui-overlay');
       const scanGuide = document.querySelector('#scanning-guide');
@@ -240,9 +308,9 @@
       const distanceWarning = document.querySelector('#distance-warning');
       
       const totalTargets = 10;
-      let activeTarget3D = null; // Used to track the currently visible target for distance checking
+      let activeTarget3D = null; 
 
-      // Dismiss onboarding screen
+      // Dismiss onboarding screen on touch/click
       startBtn.addEventListener('click', () => {
         onboardingScreen.classList.add('hidden');
       });
@@ -303,17 +371,19 @@
 
         // When target is detected
         targetEntity.addEventListener("targetFound", () => {
-          activeTarget3D = targetEntity.object3D; // Start tracking this target for distance
+          activeTarget3D = targetEntity.object3D;
           
           uiOverlay.innerHTML = `<span class="icon">${signData[i].icon}</span><h3>${signData[i].title}</h3><p>${signData[i].desc}</p>`;
+          // Force a small reflow before adding the class to ensure animation triggers smoothly on mobile
+          void uiOverlay.offsetWidth; 
           uiOverlay.classList.add("found-state");
           scanGuide.style.opacity = "0";
         });
 
         // When target is lost
         targetEntity.addEventListener("targetLost", () => {
-          activeTarget3D = null; // Stop tracking
-          distanceWarning.classList.remove('visible'); // Hide warning immediately
+          activeTarget3D = null; 
+          distanceWarning.classList.remove('visible'); 
           
           uiOverlay.innerHTML = `<span class="icon">📷</span><h3>Scanner Ready</h3><p>Align a sign within the frame to scan.</p>`;
           uiOverlay.classList.remove("found-state");
@@ -324,18 +394,10 @@
         container.appendChild(targetEntity);
       }
 
-      // =========================================
       // DISTANCE CHECKING LOOP
-      // =========================================
-      // This function continuously runs. If an image is being tracked, it calculates the distance 
-      // from the camera (which defaults to 0,0,0 in MindAR) to the target's position.
       function trackDistance() {
         if (activeTarget3D) {
-          // Calculate the straight-line distance from origin to the target
           const distance = activeTarget3D.position.length();
-          
-          // The threshold value (e.g., 3.5) depends heavily on the physical size 
-          // of the real-world marker. Adjust this number up or down to fine-tune UX!
           const distanceThreshold = 3.5; 
 
           if (distance > distanceThreshold) {
@@ -344,13 +406,10 @@
             distanceWarning.classList.remove('visible');
           }
         }
-        // Call next frame
         requestAnimationFrame(trackDistance);
       }
       
-      // Kick off the tracking loop
       trackDistance();
-
     </script>
   </body>
 </html>
