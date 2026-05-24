@@ -12,7 +12,6 @@
         margin: 0;
         overflow: hidden;
       }
-      /* Upgraded UI to look like an info card */
       #ui-overlay {
         position: absolute;
         bottom: 30px;
@@ -46,7 +45,6 @@
     </style>
   </head>
   <body>
-    <!-- Default prompt before scanning -->
     <div id="ui-overlay">
       <h3>Scanner Ready</h3>
       <p>Point your camera at one of your 10 signs.</p>
@@ -82,14 +80,11 @@
       const uiOverlay = document.querySelector('#ui-overlay');
       const totalTargets = 10;
 
-      // 1. Array of your image textures
       const imageOverlays = [
         "#tex-yosi", "#tex-parking", "#tex-noturn", "#tex-twoway", "#tex-narrowroad",
         "#tex-slippery", "#tex-pedestrian", "#tex-windingroad", "#tex-slipperyroad", "#tex-drowning"
       ];
 
-      // 2. NEW: Array of titles and explanations for each sign
-      // Note: Make sure the order matches your image array exactly!
       const signData = [
         { title: "No Smoking", desc: "Smoking or using e-cigarettes is strictly prohibited in this area." },
         { title: "Parking Area", desc: "Designated location where vehicles can be safely parked." },
@@ -122,34 +117,31 @@
         metalRim.setAttribute('metalness', '0.8');     
         metalRim.setAttribute('roughness', '0.4');
 
+        // UPDATED: The back plate now acts as a second sign face
         const backPlate = document.createElement('a-circle');
         backPlate.setAttribute('radius', '0.5');
         backPlate.setAttribute('position', '0 -0.029 0'); 
-        backPlate.setAttribute('rotation', '90 0 0');     
-        backPlate.setAttribute('color', '#2b2b2b');
+        // We add 180 to the Z-axis rotation so the image is perfectly right-side-up when spun around
+        backPlate.setAttribute('rotation', '90 0 180');     
+        backPlate.setAttribute('material', `src: ${imageOverlays[i]}; roughness: 0.6; metalness: 0.1;`);
 
         const signFace = document.createElement('a-circle');
         signFace.setAttribute('radius', '0.5');
         signFace.setAttribute('position', '0 0.03 0');    
         signFace.setAttribute('rotation', '-90 0 0');    
-        
         signFace.setAttribute('material', `src: ${imageOverlays[i]}; roughness: 0.6; metalness: 0.1;`);
 
         signContainer.appendChild(metalRim);
         signContainer.appendChild(backPlate);
         signContainer.appendChild(signFace);
 
-        // 3. UPDATED: When the target is found, inject the specific title and description
         targetEntity.addEventListener("targetFound", () => {
           uiOverlay.innerHTML = `<h3>${signData[i].title}</h3><p>${signData[i].desc}</p>`;
-          // Changes to a green background to indicate a successful scan
           uiOverlay.style.background = "rgba(16, 185, 129, 0.9)"; 
         });
 
-        // 4. UPDATED: When the target is lost, reset the UI
         targetEntity.addEventListener("targetLost", () => {
           uiOverlay.innerHTML = `<h3>Scanner Ready</h3><p>Point your camera at one of your 10 signs.</p>`;
-          // Reverts back to the dark background
           uiOverlay.style.background = "rgba(0, 0, 0, 0.8)";
         });
 
