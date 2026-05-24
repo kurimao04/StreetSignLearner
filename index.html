@@ -2,10 +2,14 @@
 <html lang="en">
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>MindAR - Premium UI/UX</title>
+    <title>MindAR - Premium Interactive UI/UX</title>
+    
     <!-- A-Frame & MindAR -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+    
+    <!-- A-Frame Particle System -->
+    <script src="https://unpkg.com/aframe-particle-system-component@1.1.3/dist/aframe-particle-system-component.min.js"></script>
     
     <!-- Google Fonts for modern typography -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
@@ -15,33 +19,56 @@
         margin: 0;
         overflow: hidden;
         font-family: 'Poppins', sans-serif;
-        background-color: #000; /* Dark background before camera starts */
+        background-color: #050505; 
       }
 
-      /* 1. ONBOARDING SCREEN (New) */
+      /* 1. ONBOARDING SCREEN (Animated Background) */
       #onboarding {
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><rect width="100%" height="100%" fill="%231a1a24" /></svg>') center/cover;
+        /* Animated Gradient Background */
+        background: linear-gradient(-45deg, #0f172a, #1e1b4b, #064e3b, #1e3a8a);
+        background-size: 400% 400%;
+        animation: gradientBG 15s ease infinite;
         z-index: 9999;
         display: flex;
         justify-content: center;
         align-items: center;
         transition: opacity 0.5s ease, visibility 0.5s ease;
+        overflow: hidden;
       }
 
-      #onboarding.hidden {
-        opacity: 0;
-        visibility: hidden;
+      @keyframes gradientBG {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+      }
+
+      /* Floating Ambient Orbs for Onboarding */
+      .orb {
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(5px);
+        animation: float 10s infinite ease-in-out alternate;
+      }
+      .orb:nth-child(1) { width: 150px; height: 150px; top: 10%; left: 15%; animation-duration: 8s; }
+      .orb:nth-child(2) { width: 250px; height: 250px; bottom: 10%; right: 10%; animation-duration: 12s; animation-delay: 2s;}
+      .orb:nth-child(3) { width: 80px; height: 80px; top: 40%; right: 25%; animation-duration: 6s; }
+
+      @keyframes float {
+        0% { transform: translateY(0px) scale(1); }
+        100% { transform: translateY(-30px) scale(1.05); }
       }
 
       .onboarding-card {
-        background: rgba(20, 20, 25, 0.7);
-        backdrop-filter: blur(15px);
-        -webkit-backdrop-filter: blur(15px);
+        position: relative;
+        background: rgba(20, 20, 25, 0.5);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
         border: 1px solid rgba(255, 255, 255, 0.15);
         box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
         color: white;
@@ -50,22 +77,14 @@
         text-align: center;
         width: 85%;
         max-width: 360px;
+        z-index: 10;
       }
 
-      .onboarding-card h2 {
-        margin: 0 0 10px 0;
-        font-size: 24px;
-      }
-
-      .onboarding-card p {
-        font-size: 14px;
-        color: rgba(255, 255, 255, 0.8);
-        line-height: 1.6;
-        margin-bottom: 30px;
-      }
+      .onboarding-card h2 { margin: 0 0 10px 0; font-size: 24px; }
+      .onboarding-card p { font-size: 14px; color: rgba(255, 255, 255, 0.8); line-height: 1.6; margin-bottom: 30px; }
 
       .start-btn {
-        background: #10b981; /* Vibrant Green */
+        background: #10b981; 
         color: white;
         border: none;
         padding: 14px 32px;
@@ -77,14 +96,11 @@
         transition: transform 0.2s ease, background 0.2s ease;
         box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
       }
+      .start-btn:hover { background: #0ea5e9; transform: scale(1.05); box-shadow: 0 4px 15px rgba(14, 165, 233, 0.4); }
 
-      .start-btn:hover {
-        background: #0ea5e9;
-        transform: scale(1.05);
-        box-shadow: 0 4px 15px rgba(14, 165, 233, 0.4);
-      }
+      #onboarding.hidden { opacity: 0; visibility: hidden; }
 
-      /* 2. THE VIEWFINDER (Guides the user's camera) */
+      /* 2. THE VIEWFINDER */
       #scanning-guide {
         position: absolute;
         top: 50%;
@@ -95,17 +111,9 @@
         z-index: 998;
         pointer-events: none;
         transition: opacity 0.3s ease;
-        opacity: 0; /* Hidden initially, shown after onboarding */
+        opacity: 0; 
       }
-      /* Viewfinder Corners */
-      .corner {
-        position: absolute;
-        width: 40px;
-        height: 40px;
-        border-color: rgba(255, 255, 255, 0.8);
-        border-style: solid;
-        animation: pulse 2s infinite;
-      }
+      .corner { position: absolute; width: 40px; height: 40px; border-color: rgba(255, 255, 255, 0.8); border-style: solid; animation: pulse 2s infinite; }
       .top-left { top: 0; left: 0; border-width: 4px 0 0 4px; border-top-left-radius: 12px; }
       .top-right { top: 0; right: 0; border-width: 4px 4px 0 0; border-top-right-radius: 12px; }
       .bottom-left { bottom: 0; left: 0; border-width: 0 0 4px 4px; border-bottom-left-radius: 12px; }
@@ -117,7 +125,27 @@
         100% { transform: scale(1); opacity: 0.8; }
       }
 
-      /* 3. THE PREMIUM INFO CARD (Glassmorphism) */
+      /* 3. DISTANCE WARNING */
+      #distance-warning {
+        position: absolute;
+        top: 40px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(239, 68, 68, 0.85); /* Red/Orange */
+        backdrop-filter: blur(10px);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+        z-index: 1000;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      }
+
+      /* 4. THE PREMIUM INFO CARD */
       #ui-overlay {
         position: absolute;
         bottom: 40px;
@@ -126,21 +154,16 @@
         z-index: 999;
         width: 85%;
         max-width: 380px;
-        
         background: rgba(20, 20, 25, 0.65);
         backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
         border: 1px solid rgba(255, 255, 255, 0.15);
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-        
         color: white;
         padding: 20px;
         border-radius: 20px;
         text-align: center;
-        pointer-events: none;
-        
         transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        opacity: 0; /* Hidden initially */
+        opacity: 0; 
       }
 
       #ui-overlay.found-state {
@@ -150,22 +173,39 @@
       }
 
       #ui-overlay h3 { margin: 0 0 8px 0; font-size: 20px; font-weight: 600; }
-      #ui-overlay p { margin: 0; font-size: 14px; color: rgba(255, 255, 255, 0.9); line-height: 1.5; font-weight: 400; }
+      #ui-overlay p { margin: 0 0 10px 0; font-size: 14px; color: rgba(255, 255, 255, 0.9); line-height: 1.5; font-weight: 400; }
       .icon { font-size: 24px; margin-bottom: 5px; display: block; }
+
+      .action-btn {
+        display: none;
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        padding: 8px 20px;
+        border-radius: 15px;
+        font-family: 'Poppins', sans-serif;
+        font-size: 13px;
+        cursor: pointer;
+        margin: 5px auto 0;
+        transition: background 0.2s;
+      }
+      .action-btn:hover { background: rgba(255, 255, 255, 0.4); }
     </style>
   </head>
   <body>
     
     <!-- Onboarding Screen -->
     <div id="onboarding">
+      <div class="orb"></div>
+      <div class="orb"></div>
+      <div class="orb"></div>
       <div class="onboarding-card">
-        <h2>AR Sign Scanner</h2>
-        <p>Discover interactive information hidden in the signs around you. <br><br><b>Please allow camera access</b> when prompted to begin scanning.</p>
+        <h2>AR Experience</h2>
+        <p>Discover interactive 3D information hidden in the world around you. <br><br><b>Allow camera access</b> and tap signs to learn more.</p>
         <button class="start-btn" id="start-btn">Start Scanning</button>
       </div>
     </div>
 
-    <!-- Visual Reticle to help users aim -->
     <div id="scanning-guide">
       <div class="corner top-left"></div>
       <div class="corner top-right"></div>
@@ -173,18 +213,22 @@
       <div class="corner bottom-right"></div>
     </div>
 
+    <!-- Distance Warning -->
+    <div id="distance-warning">⚠️ Move a little closer</div>
+
     <!-- Enhanced UI Overlay -->
     <div id="ui-overlay">
-      <span class="icon">📷</span>
-      <h3>Scanner Ready</h3>
-      <p>Align a sign within the frame to scan.</p>
+      <span class="icon" id="ui-icon">📷</span>
+      <h3 id="ui-title">Scanner Ready</h3>
+      <p id="ui-desc">Align a sign within the frame to scan.</p>
+      <button class="action-btn" id="learn-btn">Tap sign to view guide</button>
     </div>
 
-    <!-- Added 'autoStart: false' to prevent camera from starting immediately -->
+    <!-- A-Frame Scene with shadows enabled -->
     <a-scene 
       mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; maxTrack: 1; filterMinCF: 0.0001; filterBeta: 0.001;" 
       color-space="sRGB" 
-      renderer="colorManagement: true, physicallyCorrectLights" 
+      renderer="colorManagement: true, physicallyCorrectLights: true, shadowMapType: pcfsoft" 
       vr-mode-ui="enabled: false" 
       device-orientation-permission-ui="enabled: false"
     >
@@ -201,7 +245,13 @@
         <img id="tex-drowning" src="images/drowning.png">
       </a-assets>
 
-      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+      <!-- Raycaster for tapping the 3D model -->
+      <a-camera position="0 0 0" look-controls="enabled: false" cursor="rayOrigin: mouse;" raycaster="objects: .clickable"></a-camera>
+      
+      <!-- Scene Lighting for Shadows -->
+      <a-entity light="type: ambient; intensity: 0.5;"></a-entity>
+      <a-entity light="type: directional; castShadow: true; intensity: 0.8; shadowBias: -0.0005;" position="0 5 2"></a-entity>
+
       <a-entity id="target-container"></a-entity>
     </a-scene>
 
@@ -212,19 +262,33 @@
       const onboarding = document.querySelector('#onboarding');
       const startBtn = document.querySelector('#start-btn');
       const sceneEl = document.querySelector('a-scene');
+      const distWarning = document.querySelector('#distance-warning');
+      const learnBtn = document.querySelector('#learn-btn');
 
+      // Synthesized UI Click Sound (No external asset needed)
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      function playHologramPing() {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
+        osc.frequency.exponentialRampToValueAtTime(1760, audioCtx.currentTime + 0.1); // Slide up
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.2);
+      }
+
+      let activeTargetEntity = null;
       const totalTargets = 10;
 
-      // Handle the Onboarding "Start" button click
       startBtn.addEventListener('click', () => {
-        // Fade out the onboarding screen
         onboarding.classList.add('hidden');
-        
-        // Show the AR UI elements
         scanGuide.style.opacity = "1";
         uiOverlay.style.opacity = "1";
-
-        // Manually start the MindAR system (this triggers the camera permission prompt)
         const arSystem = sceneEl.systems["mindar-image-system"];
         arSystem.start();
       });
@@ -251,55 +315,120 @@
         const targetEntity = document.createElement('a-entity');
         targetEntity.setAttribute('mindar-image-target', `targetIndex: ${i}`);
         
+        // Setup Ambient Particles (Hidden by default)
+        const particles = document.createElement('a-entity');
+        particles.setAttribute('particle-system', 'preset: dust; particleCount: 150; color: #10b981, #ffffff; size: 0.6; maxAge: 2');
+        particles.setAttribute('visible', 'false');
+        targetEntity.appendChild(particles);
+
+        // Invisible Shadow Catcher Plane
+        const shadowPlane = document.createElement('a-plane');
+        shadowPlane.setAttribute('width', '5');
+        shadowPlane.setAttribute('height', '5');
+        shadowPlane.setAttribute('position', '0 -0.6 0'); 
+        shadowPlane.setAttribute('rotation', '-90 0 0');
+        shadowPlane.setAttribute('material', 'shader: shadow; opacity: 0.5'); // Only renders shadows
+        shadowPlane.setAttribute('shadow', 'receive: true');
+        targetEntity.appendChild(shadowPlane);
+
         const signContainer = document.createElement('a-entity');
         signContainer.setAttribute('rotation', '90 0 0');
-        signContainer.setAttribute('scale', '1 1 1');
+        signContainer.setAttribute('scale', '0 0 0'); // Start at 0 for pop-up animation
+        signContainer.classList.add('clickable'); // Make raycaster detect this
         
-        // Perfectly smooth 360 rotation
-        signContainer.setAttribute('animation', 'property: rotation; from: 90 0 0; to: 90 360 0; loop: true; dur: 10000; easing: linear;');
+        // Idle Rotation Animation
+        signContainer.setAttribute('animation__rotate', 'property: rotation; from: 90 0 0; to: 90 360 0; loop: true; dur: 10000; easing: linear;');
+        // Pop-up Reveal Animation (Triggered manually)
+        signContainer.setAttribute('animation__pop', 'property: scale; to: 1 1 1; dur: 800; easing: easeOutElastic; startEvents: pop-in');
 
+        // Creating Sign Meshes (Added cast shadow)
         const metalRim = document.createElement('a-cylinder');
         metalRim.setAttribute('radius', '0.51');       
         metalRim.setAttribute('height', '0.06');       
-        metalRim.setAttribute('open-ended', 'true');   
-        metalRim.setAttribute('side', 'double');
         metalRim.setAttribute('color', '#4a4a4a');     
-        metalRim.setAttribute('metalness', '0.8');     
-        metalRim.setAttribute('roughness', '0.4');
+        metalRim.setAttribute('shadow', 'cast: true');
 
         const backPlate = document.createElement('a-circle');
         backPlate.setAttribute('radius', '0.5');
         backPlate.setAttribute('position', '0 -0.029 0'); 
         backPlate.setAttribute('rotation', '90 0 180');     
-        backPlate.setAttribute('material', `src: ${imageOverlays[i]}; roughness: 0.6; metalness: 0.1;`);
+        backPlate.setAttribute('material', `src: ${imageOverlays[i]}; roughness: 0.6;`);
+        backPlate.setAttribute('shadow', 'cast: true');
 
         const signFace = document.createElement('a-circle');
         signFace.setAttribute('radius', '0.5');
         signFace.setAttribute('position', '0 0.03 0');  
         signFace.setAttribute('rotation', '-90 0 0');  
-        signFace.setAttribute('material', `src: ${imageOverlays[i]}; roughness: 0.6; metalness: 0.1;`);
+        signFace.setAttribute('material', `src: ${imageOverlays[i]}; roughness: 0.6;`);
+        signFace.setAttribute('shadow', 'cast: true');
 
         signContainer.appendChild(metalRim);
         signContainer.appendChild(backPlate);
         signContainer.appendChild(signFace);
+        targetEntity.appendChild(signContainer);
 
-        // When target is detected
+        // 3D Click Interaction
+        signContainer.addEventListener('click', () => {
+          playHologramPing();
+          // Action when 3D object is tapped
+          window.open('https://en.wikipedia.org/wiki/Traffic_sign', '_blank'); // Replace with your actual target URL
+        });
+
+        // On Target Found
         targetEntity.addEventListener("targetFound", () => {
-          uiOverlay.innerHTML = `<span class="icon">${signData[i].icon}</span><h3>${signData[i].title}</h3><p>${signData[i].desc}</p>`;
+          activeTargetEntity = targetEntity;
+          
+          // Trigger animations and particles
+          signContainer.emit('pop-in');
+          particles.setAttribute('visible', 'true');
+          
+          // Update UI
+          document.querySelector('#ui-icon').innerText = signData[i].icon;
+          document.querySelector('#ui-title').innerText = signData[i].title;
+          document.querySelector('#ui-desc').innerText = signData[i].desc;
+          learnBtn.style.display = "block";
+          
           uiOverlay.classList.add("found-state");
           scanGuide.style.opacity = "0";
         });
 
-        // When target is lost
+        // On Target Lost
         targetEntity.addEventListener("targetLost", () => {
-          uiOverlay.innerHTML = `<span class="icon">📷</span><h3>Scanner Ready</h3><p>Align a sign within the frame to scan.</p>`;
+          activeTargetEntity = null;
+          
+          // Reset models
+          signContainer.setAttribute('scale', '0 0 0');
+          particles.setAttribute('visible', 'false');
+          distWarning.style.opacity = '0';
+          
+          // Reset UI
+          document.querySelector('#ui-icon').innerText = "📷";
+          document.querySelector('#ui-title').innerText = "Scanner Ready";
+          document.querySelector('#ui-desc').innerText = "Align a sign within the frame to scan.";
+          learnBtn.style.display = "none";
+
           uiOverlay.classList.remove("found-state");
           scanGuide.style.opacity = "1";
         });
 
-        targetEntity.appendChild(signContainer);
         container.appendChild(targetEntity);
       }
+
+      // Distance Checker Loop
+      // MindAR scales the camera/target based on physical distance.
+      // We check the relative position vector length to estimate distance.
+      setInterval(() => {
+        if (activeTargetEntity) {
+          const distance = activeTargetEntity.object3D.position.length();
+          // If distance value gets too high, the user is too far.
+          if (distance > 2.5) { 
+            distWarning.style.opacity = '1';
+          } else {
+            distWarning.style.opacity = '0';
+          }
+        }
+      }, 500);
+
     </script>
   </body>
 </html>
