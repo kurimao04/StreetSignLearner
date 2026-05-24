@@ -1,236 +1,105 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>MindAR - Premium Interactive UI/UX</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>MindAR - Premium Mobile UI/UX</title>
+    
+    <!-- PWA Manifest Link -->
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#10b981">
     
     <!-- A-Frame & MindAR -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-    
-    <!-- A-Frame Particle System -->
-    <script src="https://unpkg.com/aframe-particle-system-component@1.1.3/dist/aframe-particle-system-component.min.js"></script>
-    
-    <!-- Google Fonts for modern typography -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     
     <style>
+      /* Base & Onboarding Styles... (Same as before) */
+      * { box-sizing: border-box; }
       body {
-        margin: 0;
-        overflow: hidden;
-        font-family: 'Poppins', sans-serif;
-        background-color: #050505; 
+        margin: 0; overflow: hidden; font-family: 'Poppins', sans-serif; background-color: #000;
+        overscroll-behavior-y: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; touch-action: none;
       }
 
-      /* 1. ONBOARDING SCREEN (Animated Background) */
-      #onboarding {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        /* Animated Gradient Background */
-        background: linear-gradient(-45deg, #0f172a, #1e1b4b, #064e3b, #1e3a8a);
-        background-size: 400% 400%;
-        animation: gradientBG 15s ease infinite;
-        z-index: 9999;
-        display: flex;
-        justify-content: center;
-        align-items: center;
+      #onboarding-screen {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background-color: #fafafa;
+        background-image: linear-gradient(#d1d5db 1px, transparent 1px), linear-gradient(90deg, #d1d5db 1px, transparent 1px);
+        background-size: clamp(30px, 8vw, 50px) clamp(30px, 8vw, 50px);
+        z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
+        padding: env(safe-area-inset-top) 20px env(safe-area-inset-bottom);
         transition: opacity 0.5s ease, visibility 0.5s ease;
-        overflow: hidden;
       }
-
-      @keyframes gradientBG {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-      }
-
-      /* Floating Ambient Orbs for Onboarding */
-      .orb {
-        position: absolute;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(5px);
-        animation: float 10s infinite ease-in-out alternate;
-      }
-      .orb:nth-child(1) { width: 150px; height: 150px; top: 10%; left: 15%; animation-duration: 8s; }
-      .orb:nth-child(2) { width: 250px; height: 250px; bottom: 10%; right: 10%; animation-duration: 12s; animation-delay: 2s;}
-      .orb:nth-child(3) { width: 80px; height: 80px; top: 40%; right: 25%; animation-duration: 6s; }
-
-      @keyframes float {
-        0% { transform: translateY(0px) scale(1); }
-        100% { transform: translateY(-30px) scale(1.05); }
-      }
-
-      .onboarding-card {
-        position: relative;
-        background: rgba(20, 20, 25, 0.5);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
-        color: white;
-        padding: 40px 30px;
-        border-radius: 24px;
-        text-align: center;
-        width: 85%;
-        max-width: 360px;
-        z-index: 10;
-      }
-
-      .onboarding-card h2 { margin: 0 0 10px 0; font-size: 24px; }
-      .onboarding-card p { font-size: 14px; color: rgba(255, 255, 255, 0.8); line-height: 1.6; margin-bottom: 30px; }
-
+      #onboarding-screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+      .onboarding-card { background: white; border: 2px solid #111; padding: clamp(20px, 6vw, 40px); width: 90%; max-width: 400px; border-radius: 12px; box-shadow: 6px 6px 0px #111; }
+      .onboarding-card h1 { margin: 0 0 12px 0; font-size: clamp(22px, 5vw, 28px); color: #111; }
+      .onboarding-card p { margin: 0 0 30px 0; font-size: clamp(14px, 3.5vw, 16px); color: #444; line-height: 1.6; }
+      
       .start-btn {
-        background: #10b981; 
-        color: white;
-        border: none;
-        padding: 14px 32px;
-        font-size: 16px;
-        font-weight: 600;
-        border-radius: 30px;
-        cursor: pointer;
-        font-family: 'Poppins', sans-serif;
-        transition: transform 0.2s ease, background 0.2s ease;
-        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+        background: transparent; border: 2px solid #111; color: #111; padding: 14px 28px;
+        font-family: 'Poppins', sans-serif; font-weight: 600; font-size: clamp(15px, 4vw, 17px); border-radius: 8px; cursor: pointer; transition: all 0.2s ease; width: 100%;
       }
-      .start-btn:hover { background: #0ea5e9; transform: scale(1.05); box-shadow: 0 4px 15px rgba(14, 165, 233, 0.4); }
+      .start-btn:active { background: #111; color: white; transform: translateY(2px); box-shadow: 2px 2px 0px #111; }
 
-      #onboarding.hidden { opacity: 0; visibility: hidden; }
-
-      /* 2. THE VIEWFINDER */
-      #scanning-guide {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 250px;
-        height: 250px;
-        z-index: 998;
-        pointer-events: none;
-        transition: opacity 0.3s ease;
-        opacity: 0; 
-      }
-      .corner { position: absolute; width: 40px; height: 40px; border-color: rgba(255, 255, 255, 0.8); border-style: solid; animation: pulse 2s infinite; }
-      .top-left { top: 0; left: 0; border-width: 4px 0 0 4px; border-top-left-radius: 12px; }
-      .top-right { top: 0; right: 0; border-width: 4px 4px 0 0; border-top-right-radius: 12px; }
-      .bottom-left { bottom: 0; left: 0; border-width: 0 0 4px 4px; border-bottom-left-radius: 12px; }
-      .bottom-right { bottom: 0; right: 0; border-width: 0 4px 4px 0; border-bottom-right-radius: 12px; }
-
-      @keyframes pulse {
-        0% { transform: scale(1); opacity: 0.8; }
-        50% { transform: scale(1.05); opacity: 0.4; }
-        100% { transform: scale(1); opacity: 0.8; }
-      }
-
-      /* 3. DISTANCE WARNING */
       #distance-warning {
-        position: absolute;
-        top: 40px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(239, 68, 68, 0.85); /* Red/Orange */
-        backdrop-filter: blur(10px);
-        color: white;
-        padding: 10px 20px;
-        border-radius: 20px;
-        font-size: 13px;
-        font-weight: 600;
-        z-index: 1000;
-        pointer-events: none;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        position: absolute; top: max(20px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%) translateY(-20px);
+        background: rgba(245, 158, 11, 0.95); backdrop-filter: blur(8px); color: white; padding: 10px 24px; border-radius: 30px;
+        font-size: clamp(13px, 3.5vw, 15px); font-weight: 600; white-space: nowrap; box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+        z-index: 1000; opacity: 0; pointer-events: none; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
       }
+      #distance-warning.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-      /* 4. THE PREMIUM INFO CARD */
+      #scanning-guide {
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: clamp(200px, 65vw, 300px); height: clamp(200px, 65vw, 300px); z-index: 998; pointer-events: none; transition: opacity 0.4s ease;
+      }
+      .corner { position: absolute; width: clamp(30px, 10vw, 50px); height: clamp(30px, 10vw, 50px); border-color: rgba(255, 255, 255, 0.9); border-style: solid; animation: pulse 2s infinite; }
+      .top-left { top: 0; left: 0; border-width: 4px 0 0 4px; border-top-left-radius: 16px; }
+      .top-right { top: 0; right: 0; border-width: 4px 4px 0 0; border-top-right-radius: 16px; }
+      .bottom-left { bottom: 0; left: 0; border-width: 0 0 4px 4px; border-bottom-left-radius: 16px; }
+      .bottom-right { bottom: 0; right: 0; border-width: 0 4px 4px 0; border-bottom-right-radius: 16px; }
+      @keyframes pulse { 0% { transform: scale(1); opacity: 0.9; } 50% { transform: scale(1.08); opacity: 0.4; } 100% { transform: scale(1); opacity: 0.9; } }
+
       #ui-overlay {
-        position: absolute;
-        bottom: 40px;
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 999;
-        width: 85%;
-        max-width: 380px;
-        background: rgba(20, 20, 25, 0.65);
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-        color: white;
-        padding: 20px;
-        border-radius: 20px;
-        text-align: center;
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        opacity: 0; 
+        position: absolute; bottom: max(30px, env(safe-area-inset-bottom) + 15px); left: 50%; transform: translateX(-50%) translateY(20px); z-index: 999; width: 90%; max-width: 420px;
+        background: rgba(20, 20, 25, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4); border-radius: 24px; color: white; padding: clamp(15px, 5vw, 25px); text-align: center; pointer-events: none; transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); opacity: 0.9;
       }
+      #ui-overlay.found-state { background: rgba(16, 185, 129, 0.9); border: 1px solid rgba(255, 255, 255, 0.5); transform: translateX(-50%) translateY(0) scale(1.03); opacity: 1; box-shadow: 0 15px 50px rgba(16, 185, 129, 0.3); }
+      #ui-overlay h3 { margin: 0 0 6px 0; font-size: clamp(18px, 5vw, 22px); font-weight: 600; }
+      #ui-overlay p { margin: 0; font-size: clamp(13px, 3.5vw, 15px); color: rgba(255, 255, 255, 0.95); line-height: 1.5; }
+      .icon { font-size: clamp(28px, 8vw, 32px); margin-bottom: 8px; display: block; }
 
-      #ui-overlay.found-state {
-        background: rgba(16, 185, 129, 0.8); 
-        border: 1px solid rgba(255, 255, 255, 0.4);
-        transform: translateX(-50%) scale(1.02); 
+      /* Sound Toggle UI */
+      #audio-toggle {
+        position: absolute; top: max(20px, env(safe-area-inset-top)); right: 20px; z-index: 1001; background: rgba(20, 20, 25, 0.75); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 50%; width: 45px; height: 45px; font-size: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(10px); transition: 0.3s;
       }
-
-      #ui-overlay h3 { margin: 0 0 8px 0; font-size: 20px; font-weight: 600; }
-      #ui-overlay p { margin: 0 0 10px 0; font-size: 14px; color: rgba(255, 255, 255, 0.9); line-height: 1.5; font-weight: 400; }
-      .icon { font-size: 24px; margin-bottom: 5px; display: block; }
-
-      .action-btn {
-        display: none;
-        background: rgba(255, 255, 255, 0.2);
-        color: white;
-        border: 1px solid rgba(255, 255, 255, 0.4);
-        padding: 8px 20px;
-        border-radius: 15px;
-        font-family: 'Poppins', sans-serif;
-        font-size: 13px;
-        cursor: pointer;
-        margin: 5px auto 0;
-        transition: background 0.2s;
-      }
-      .action-btn:hover { background: rgba(255, 255, 255, 0.4); }
     </style>
   </head>
   <body>
     
-    <!-- Onboarding Screen -->
-    <div id="onboarding">
-      <div class="orb"></div>
-      <div class="orb"></div>
-      <div class="orb"></div>
+    <!-- Audio Toggle Button -->
+    <div id="audio-toggle">🔊</div>
+
+    <!-- Wireframe Onboarding Screen -->
+    <div id="onboarding-screen">
       <div class="onboarding-card">
-        <h2>AR Experience</h2>
-        <p>Discover interactive 3D information hidden in the world around you. <br><br><b>Allow camera access</b> and tap signs to learn more.</p>
-        <button class="start-btn" id="start-btn">Start Scanning</button>
+        <h1>AR Sign Scanner</h1>
+        <p>Turn up your volume! Point your camera at supported street signs to reveal safety rules. Tap the floating signs to interact.</p>
+        <button class="start-btn" id="start-btn">Start Experience</button>
       </div>
     </div>
 
-    <div id="scanning-guide">
-      <div class="corner top-left"></div>
-      <div class="corner top-right"></div>
-      <div class="corner bottom-left"></div>
-      <div class="corner bottom-right"></div>
-    </div>
-
-    <!-- Distance Warning -->
-    <div id="distance-warning">⚠️ Move a little closer</div>
-
-    <!-- Enhanced UI Overlay -->
+    <div id="distance-warning">⚠️ Move closer to the sign</div>
+    <div id="scanning-guide"><div class="corner top-left"></div><div class="corner top-right"></div><div class="corner bottom-left"></div><div class="corner bottom-right"></div></div>
+    
     <div id="ui-overlay">
-      <span class="icon" id="ui-icon">📷</span>
-      <h3 id="ui-title">Scanner Ready</h3>
-      <p id="ui-desc">Align a sign within the frame to scan.</p>
-      <button class="action-btn" id="learn-btn">Tap sign to view guide</button>
+      <span class="icon">📷</span><h3>Scanner Ready</h3><p>Align a sign within the frame to scan.</p>
     </div>
 
-    <!-- A-Frame Scene with shadows enabled -->
+    <!-- AR Scene (Added cursor raycaster for tap interactions) -->
     <a-scene 
-      mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; maxTrack: 1; filterMinCF: 0.0001; filterBeta: 0.001;" 
-      color-space="sRGB" 
-      renderer="colorManagement: true, physicallyCorrectLights: true, shadowMapType: pcfsoft" 
-      vr-mode-ui="enabled: false" 
-      device-orientation-permission-ui="enabled: false"
+      mindar-image="imageTargetSrc: ./targets.mind; maxTrack: 1; filterMinCF: 0.0001; filterBeta: 0.001;" 
+      color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false"
+      cursor="rayOrigin: mouse; fuse: false" raycaster="objects: .clickable"
     >
       <a-assets>
         <img id="tex-yosi" src="images/yosi.png">
@@ -245,190 +114,191 @@
         <img id="tex-drowning" src="images/drowning.png">
       </a-assets>
 
-      <!-- Raycaster for tapping the 3D model -->
-      <a-camera position="0 0 0" look-controls="enabled: false" cursor="rayOrigin: mouse;" raycaster="objects: .clickable"></a-camera>
-      
-      <!-- Scene Lighting for Shadows -->
-      <a-entity light="type: ambient; intensity: 0.5;"></a-entity>
-      <a-entity light="type: directional; castShadow: true; intensity: 0.8; shadowBias: -0.0005;" position="0 5 2"></a-entity>
-
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
       <a-entity id="target-container"></a-entity>
     </a-scene>
 
     <script>
+      // =========================================
+      // AUDIO & TTS ENGINE
+      // =========================================
+      let isAudioEnabled = true;
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      
+      // Synthesize UI Beeps (No external MP3s needed)
+      function playTone(freq, type, duration) {
+        if (!isAudioEnabled || audioCtx.state === 'suspended') return;
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        osc.type = type; osc.frequency.value = freq;
+        osc.connect(gainNode); gainNode.connect(audioCtx.destination);
+        osc.start();
+        gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+        osc.stop(audioCtx.currentTime + duration);
+      }
+
+      function playSuccessSound() { playTone(880, 'sine', 0.1); setTimeout(() => playTone(1100, 'sine', 0.2), 100); }
+      function playWarningSound() { playTone(300, 'square', 0.2); }
+      function playTapSound() { playTone(600, 'triangle', 0.1); }
+
+      // Text-To-Speech
+      const synth = window.speechSynthesis;
+      function speakText(title, desc) {
+        if (!isAudioEnabled) return;
+        synth.cancel(); // Stop current speech
+        const utterance = new SpeechSynthesisUtterance(`${title}. ${desc}`);
+        utterance.rate = 1.0;
+        synth.speak(utterance);
+      }
+
+      // Haptics
+      function triggerHaptic(type = 'success') {
+        if (!navigator.vibrate) return;
+        if (type === 'success') navigator.vibrate([100, 50, 100]); // Double buzz
+        if (type === 'warning') navigator.vibrate([200]); // Long buzz
+        if (type === 'tap') navigator.vibrate([50]); // Short tap
+      }
+
+      // Audio Toggle UI
+      const audioToggle = document.getElementById('audio-toggle');
+      audioToggle.addEventListener('click', () => {
+        isAudioEnabled = !isAudioEnabled;
+        audioToggle.innerHTML = isAudioEnabled ? '🔊' : '🔇';
+        if (!isAudioEnabled) synth.cancel();
+      });
+
+      // =========================================
+      // UI & AR LOGIC
+      // =========================================
       const container = document.querySelector('#target-container');
       const uiOverlay = document.querySelector('#ui-overlay');
       const scanGuide = document.querySelector('#scanning-guide');
-      const onboarding = document.querySelector('#onboarding');
+      const onboardingScreen = document.querySelector('#onboarding-screen');
       const startBtn = document.querySelector('#start-btn');
-      const sceneEl = document.querySelector('a-scene');
-      const distWarning = document.querySelector('#distance-warning');
-      const learnBtn = document.querySelector('#learn-btn');
-
-      // Synthesized UI Click Sound (No external asset needed)
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      function playHologramPing() {
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
-        osc.frequency.exponentialRampToValueAtTime(1760, audioCtx.currentTime + 0.1); // Slide up
-        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.2);
-      }
-
-      let activeTargetEntity = null;
+      const distanceWarning = document.querySelector('#distance-warning');
+      
       const totalTargets = 10;
+      let activeTarget3D = null; 
+      let isWarningActive = false;
 
+      // START BUTTON: Dismiss screen AND unlock audio permissions
       startBtn.addEventListener('click', () => {
-        onboarding.classList.add('hidden');
-        scanGuide.style.opacity = "1";
-        uiOverlay.style.opacity = "1";
-        const arSystem = sceneEl.systems["mindar-image-system"];
-        arSystem.start();
+        onboardingScreen.classList.add('hidden');
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        // Speak an empty string to unlock TTS on iOS/Safari
+        synth.speak(new SpeechSynthesisUtterance('')); 
       });
 
-      const imageOverlays = [
-        "#tex-yosi", "#tex-parking", "#tex-noturn", "#tex-twoway", "#tex-narrowroad",
-        "#tex-slippery", "#tex-pedestrian", "#tex-windingroad", "#tex-slipperyroad", "#tex-drowning"
-      ];
-
+      const imageOverlays = ["#tex-yosi", "#tex-parking", "#tex-noturn", "#tex-twoway", "#tex-narrowroad", "#tex-slippery", "#tex-pedestrian", "#tex-windingroad", "#tex-slipperyroad", "#tex-drowning"];
       const signData = [
         { icon: "🚭", title: "No Smoking", desc: "Smoking or using e-cigarettes is strictly prohibited in this area." },
         { icon: "🅿️", title: "Parking Area", desc: "Designated location where vehicles can be safely parked." },
         { icon: "🚫", title: "No Turning", desc: "Vehicles are not permitted to make a turn at this intersection." },
         { icon: "↕️", title: "Two-Way Traffic", desc: "Warning: You are entering a road with opposing traffic." },
-        { icon: "⚠️", title: "Narrow Road Ahead", desc: "The road ahead narrows. Proceed with caution and yield if necessary." },
+        { icon: "⚠️", title: "Narrow Road Ahead", desc: "The road ahead narrows. Proceed with caution." },
         { icon: "🥾", title: "Slippery Surface", desc: "Watch your step! The surface here can be slippery." },
-        { icon: "🚶", title: "Pedestrian Crossing", desc: "Slow down and yield to pedestrians crossing the street." },
+        { icon: "🚶", title: "Pedestrian Crossing", desc: "Slow down and yield to pedestrians crossing." },
         { icon: "🔄", title: "Winding Road", desc: "The road ahead curves continuously. Drive carefully." },
-        { icon: "🌧️", title: "Slippery When Wet", desc: "Vehicles may lose traction here during rain. Reduce speed." },
-        { icon: "🛟", title: "Deep Water Hazard", desc: "Warning: Deep water area. Swimming is dangerous or prohibited." }
+        { icon: "🌧️", title: "Slippery When Wet", desc: "Vehicles may lose traction here during rain." },
+        { icon: "🛟", title: "Deep Water Hazard", desc: "Warning: Deep water area. Swimming is dangerous." }
       ];
 
       for (let i = 0; i < totalTargets; i++) {
         const targetEntity = document.createElement('a-entity');
         targetEntity.setAttribute('mindar-image-target', `targetIndex: ${i}`);
         
-        // Setup Ambient Particles (Hidden by default)
-        const particles = document.createElement('a-entity');
-        particles.setAttribute('particle-system', 'preset: dust; particleCount: 150; color: #10b981, #ffffff; size: 0.6; maxAge: 2');
-        particles.setAttribute('visible', 'false');
-        targetEntity.appendChild(particles);
-
-        // Invisible Shadow Catcher Plane
-        const shadowPlane = document.createElement('a-plane');
-        shadowPlane.setAttribute('width', '5');
-        shadowPlane.setAttribute('height', '5');
-        shadowPlane.setAttribute('position', '0 -0.6 0'); 
-        shadowPlane.setAttribute('rotation', '-90 0 0');
-        shadowPlane.setAttribute('material', 'shader: shadow; opacity: 0.5'); // Only renders shadows
-        shadowPlane.setAttribute('shadow', 'receive: true');
-        targetEntity.appendChild(shadowPlane);
-
         const signContainer = document.createElement('a-entity');
+        // Add "clickable" class so the raycaster detects it
+        signContainer.setAttribute('class', 'clickable'); 
         signContainer.setAttribute('rotation', '90 0 0');
-        signContainer.setAttribute('scale', '0 0 0'); // Start at 0 for pop-up animation
-        signContainer.classList.add('clickable'); // Make raycaster detect this
+        signContainer.setAttribute('scale', '1 1 1');
         
-        // Idle Rotation Animation
+        // Continuous Rotation
         signContainer.setAttribute('animation__rotate', 'property: rotation; from: 90 0 0; to: 90 360 0; loop: true; dur: 10000; easing: linear;');
-        // Pop-up Reveal Animation (Triggered manually)
-        signContainer.setAttribute('animation__pop', 'property: scale; to: 1 1 1; dur: 800; easing: easeOutElastic; startEvents: pop-in');
+        
+        // INTERACTION: Tap-to-Expand Animation
+        signContainer.setAttribute('animation__click', 'property: scale; from: 1 1 1; to: 1.3 1.3 1.3; dur: 200; startEvents: click; dir: alternate; loop: 1;');
 
-        // Creating Sign Meshes (Added cast shadow)
-        const metalRim = document.createElement('a-cylinder');
-        metalRim.setAttribute('radius', '0.51');       
-        metalRim.setAttribute('height', '0.06');       
-        metalRim.setAttribute('color', '#4a4a4a');     
-        metalRim.setAttribute('shadow', 'cast: true');
-
-        const backPlate = document.createElement('a-circle');
-        backPlate.setAttribute('radius', '0.5');
-        backPlate.setAttribute('position', '0 -0.029 0'); 
-        backPlate.setAttribute('rotation', '90 0 180');     
-        backPlate.setAttribute('material', `src: ${imageOverlays[i]}; roughness: 0.6;`);
-        backPlate.setAttribute('shadow', 'cast: true');
-
-        const signFace = document.createElement('a-circle');
-        signFace.setAttribute('radius', '0.5');
-        signFace.setAttribute('position', '0 0.03 0');  
-        signFace.setAttribute('rotation', '-90 0 0');  
-        signFace.setAttribute('material', `src: ${imageOverlays[i]}; roughness: 0.6;`);
-        signFace.setAttribute('shadow', 'cast: true');
-
-        signContainer.appendChild(metalRim);
-        signContainer.appendChild(backPlate);
-        signContainer.appendChild(signFace);
-        targetEntity.appendChild(signContainer);
-
-        // 3D Click Interaction
+        // Add Click Listener for Sound/Haptics
         signContainer.addEventListener('click', () => {
-          playHologramPing();
-          // Action when 3D object is tapped
-          window.open('https://en.wikipedia.org/wiki/Traffic_sign', '_blank'); // Replace with your actual target URL
+          playTapSound();
+          triggerHaptic('tap');
         });
 
-        // On Target Found
+        const metalRim = document.createElement('a-cylinder');
+        metalRim.setAttribute('radius', '0.51'); metalRim.setAttribute('height', '0.06'); metalRim.setAttribute('open-ended', 'true'); metalRim.setAttribute('side', 'double'); metalRim.setAttribute('color', '#4a4a4a'); metalRim.setAttribute('metalness', '0.8'); metalRim.setAttribute('roughness', '0.4');
+
+        const backPlate = document.createElement('a-circle');
+        backPlate.setAttribute('radius', '0.5'); backPlate.setAttribute('position', '0 -0.029 0'); backPlate.setAttribute('rotation', '90 0 180'); backPlate.setAttribute('material', `src: ${imageOverlays[i]}; roughness: 0.6; metalness: 0.1;`);
+
+        const signFace = document.createElement('a-circle');
+        signFace.setAttribute('radius', '0.5'); signFace.setAttribute('position', '0 0.03 0'); signFace.setAttribute('rotation', '-90 0 0'); signFace.setAttribute('material', `src: ${imageOverlays[i]}; roughness: 0.6; metalness: 0.1;`);
+
+        signContainer.appendChild(metalRim); signContainer.appendChild(backPlate); signContainer.appendChild(signFace);
+
+        // Target Found Event
         targetEntity.addEventListener("targetFound", () => {
-          activeTargetEntity = targetEntity;
+          activeTarget3D = targetEntity.object3D;
+          isWarningActive = false;
+
+          playSuccessSound();
+          triggerHaptic('success');
+          speakText(signData[i].title, signData[i].desc);
           
-          // Trigger animations and particles
-          signContainer.emit('pop-in');
-          particles.setAttribute('visible', 'true');
-          
-          // Update UI
-          document.querySelector('#ui-icon').innerText = signData[i].icon;
-          document.querySelector('#ui-title').innerText = signData[i].title;
-          document.querySelector('#ui-desc').innerText = signData[i].desc;
-          learnBtn.style.display = "block";
-          
+          uiOverlay.innerHTML = `<span class="icon">${signData[i].icon}</span><h3>${signData[i].title}</h3><p>${signData[i].desc}</p>`;
+          void uiOverlay.offsetWidth; 
           uiOverlay.classList.add("found-state");
           scanGuide.style.opacity = "0";
         });
 
-        // On Target Lost
+        // Target Lost Event
         targetEntity.addEventListener("targetLost", () => {
-          activeTargetEntity = null;
+          activeTarget3D = null; 
+          isWarningActive = false;
+          synth.cancel(); // Stop talking if sign is lost
+          distanceWarning.classList.remove('visible'); 
           
-          // Reset models
-          signContainer.setAttribute('scale', '0 0 0');
-          particles.setAttribute('visible', 'false');
-          distWarning.style.opacity = '0';
-          
-          // Reset UI
-          document.querySelector('#ui-icon').innerText = "📷";
-          document.querySelector('#ui-title').innerText = "Scanner Ready";
-          document.querySelector('#ui-desc').innerText = "Align a sign within the frame to scan.";
-          learnBtn.style.display = "none";
-
+          uiOverlay.innerHTML = `<span class="icon">📷</span><h3>Scanner Ready</h3><p>Align a sign within the frame to scan.</p>`;
           uiOverlay.classList.remove("found-state");
           scanGuide.style.opacity = "1";
         });
 
+        targetEntity.appendChild(signContainer);
         container.appendChild(targetEntity);
       }
 
-      // Distance Checker Loop
-      // MindAR scales the camera/target based on physical distance.
-      // We check the relative position vector length to estimate distance.
-      setInterval(() => {
-        if (activeTargetEntity) {
-          const distance = activeTargetEntity.object3D.position.length();
-          // If distance value gets too high, the user is too far.
-          if (distance > 2.5) { 
-            distWarning.style.opacity = '1';
-          } else {
-            distWarning.style.opacity = '0';
+      // DISTANCE CHECKING LOOP
+      function trackDistance() {
+        if (activeTarget3D) {
+          const distance = activeTarget3D.position.length();
+          const distanceThreshold = 3.5; 
+
+          if (distance > distanceThreshold && !isWarningActive) {
+            isWarningActive = true;
+            distanceWarning.classList.add('visible');
+            triggerHaptic('warning');
+            playWarningSound();
+          } else if (distance <= distanceThreshold && isWarningActive) {
+            isWarningActive = false;
+            distanceWarning.classList.remove('visible');
           }
         }
-      }, 500);
+        requestAnimationFrame(trackDistance);
+      }
+      trackDistance();
 
+      // =========================================
+      // PWA SERVICE WORKER REGISTRATION
+      // =========================================
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js').then((reg) => {
+            console.log('ServiceWorker registered:', reg.scope);
+          }).catch((err) => {
+            console.log('ServiceWorker registration failed:', err);
+          });
+        });
+      }
     </script>
   </body>
 </html>
