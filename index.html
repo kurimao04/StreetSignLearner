@@ -12,7 +12,6 @@
         margin: 0;
         overflow: hidden;
       }
-      /* Simple overlay UI to show the user what's happening */
       #ui-overlay {
         position: absolute;
         bottom: 20px;
@@ -30,14 +29,8 @@
     </style>
   </head>
   <body>
-
-    <!-- UI feedback text -->
     <div id="ui-overlay">Point your camera at one of your 10 targets</div>
 
-    <!-- 
-      maxTrack: 1 is recommended for performance with 10 targets unless 
-      you explicitly need to scan multiple images sitting side-by-side.
-    -->
     <a-scene 
       mindar-image="imageTargetSrc: ./targets.mind; maxTrack: 1;" 
       color-space="sRGB" 
@@ -47,86 +40,75 @@
     >
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
       
-      <!-- JavaScript will dynamically inject the 10 target entities here -->
-      <div id="target-container"></div>
+      <!-- FIX 1: Changed <div> to <a-entity> -->
+      <a-entity id="target-container"></a-entity>
 
     </a-scene>
 
     <script>
-const container = document.querySelector('#target-container');
-const uiOverlay = document.querySelector('#ui-overlay');
-const totalTargets = 10;
+      const container = document.querySelector('#target-container');
+      const uiOverlay = document.querySelector('#ui-overlay');
+      const totalTargets = 10;
 
-// Path to your sign texture (using the image you provided)
-const imageOverlays = [
-  "images/yosi.png", // Target 1
-  "images/overlay2.png",   // Target 2... fallback paths for the rest
-  "images/overlay3.png", "images/overlay4.png", "images/overlay5.png",
-  "images/overlay6.png", "images/overlay7.png", "images/overlay8.png",
-  "images/overlay9.png", "images/overlay10.png"
-];
+      const imageOverlays = [
+        "images/yosi.png", 
+        "images/overlay2.png", 
+        "images/overlay3.png", "images/overlay4.png", "images/overlay5.png",
+        "images/overlay6.png", "images/overlay7.png", "images/overlay8.png",
+        "images/overlay9.png", "images/overlay10.png"
+      ];
 
-// Loop to generate each target programmatically
-for (let i = 0; i < totalTargets; i++) {
-  // 1. Create the parent anchor entity
-  const targetEntity = document.createElement('a-entity');
-  targetEntity.setAttribute('mindar-image-target', `targetIndex: ${i}`);
-  
-  // 2. Create a Wrapper Entity to hold our 3D Sign Geometry
-  // A-Frame entities face "up" by default, so we rotate it 90 degrees on the X-axis 
-  // so the face of the sign points directly out at the user camera.
-  const signContainer = document.createElement('a-entity');
-  signContainer.setAttribute('rotation', '90 0 0');
-  signContainer.setAttribute('scale', '1 1 1');
+      for (let i = 0; i < totalTargets; i++) {
+        const targetEntity = document.createElement('a-entity');
+        targetEntity.setAttribute('mindar-image-target', `targetIndex: ${i}`);
+        
+        const signContainer = document.createElement('a-entity');
+        signContainer.setAttribute('rotation', '90 0 0');
+        signContainer.setAttribute('scale', '1 1 1');
+        
+        // FIX 3: Added a slow, continuous spinning animation to the whole sign
+        signContainer.setAttribute('animation', 'property: rotation; to: 90 360 0; loop: true; dur: 8000; easing: linear;');
 
-  // 3. GEOMETRY: The Outer Metal Rim
-  // We use a thin, open-ended cylinder to give it a 3D frame depth.
-  const metalRim = document.createElement('a-cylinder');
-  metalRim.setAttribute('radius', '0.51');       // Slightly larger than the image face
-  metalRim.setAttribute('height', '0.06');       // Controls the thickness/depth of the sign
-  metalRim.setAttribute('open-ended', 'true');   // Hollow tube
-  metalRim.setAttribute('side', 'double');
-  metalRim.setAttribute('color', '#4a4a4a');     // Dark industrial metal color
-  metalRim.setAttribute('metalness', '0.8');     // Makes it shiny/metallic
-  metalRim.setAttribute('roughness', '0.4');
+        const metalRim = document.createElement('a-cylinder');
+        metalRim.setAttribute('radius', '0.51');       
+        metalRim.setAttribute('height', '0.06');       
+        metalRim.setAttribute('open-ended', 'true');   
+        metalRim.setAttribute('side', 'double');
+        metalRim.setAttribute('color', '#4a4a4a');     
+        metalRim.setAttribute('metalness', '0.8');     
+        metalRim.setAttribute('roughness', '0.4');
 
-  // 4. GEOMETRY: The Back Plate
-  // Closes up the back of the sign so it looks solid from behind
-  const backPlate = document.createElement('a-circle');
-  backPlate.setAttribute('radius', '0.5');
-  backPlate.setAttribute('position', '0 -0.029 0'); // Recessed to the back edge
-  backPlate.setAttribute('rotation', '90 0 0');     // Facing away
-  backPlate.setAttribute('color', '#2b2b2b');
+        const backPlate = document.createElement('a-circle');
+        backPlate.setAttribute('radius', '0.5');
+        backPlate.setAttribute('position', '0 -0.029 0'); 
+        backPlate.setAttribute('rotation', '90 0 0');     
+        backPlate.setAttribute('color', '#2b2b2b');
 
-  // 5. GEOMETRY: The Front Face (Your Image Texture)
-  // This sits perfectly inside the 3D metal rim frame
-  const signFace = document.createElement('a-circle');
-  signFace.setAttribute('radius', '0.5');
-  signFace.setAttribute('position', '0 0.03 0');    // Brought to the very front edge
-  signFace.setAttribute('rotation', '-90 0 0');    // Facing forward toward camera
-  signFace.setAttribute('src', imageOverlays[i]);  // Maps your texture image onto the geometry
-  signFace.setAttribute('material', 'roughness: 0.6; metalness: 0.1;');
+        const signFace = document.createElement('a-circle');
+        signFace.setAttribute('radius', '0.5');
+        signFace.setAttribute('position', '0 0.03 0');    
+        signFace.setAttribute('rotation', '-90 0 0');    
+        
+        // FIX 2: Combined src and material settings into one attribute
+        signFace.setAttribute('material', `src: ${imageOverlays[i]}; roughness: 0.6; metalness: 0.1;`);
 
-  // Assemble the 3D Sign Object
-  signContainer.appendChild(metalRim);
-  signContainer.appendChild(backPlate);
-  signContainer.appendChild(signFace);
+        signContainer.appendChild(metalRim);
+        signContainer.appendChild(backPlate);
+        signContainer.appendChild(signFace);
 
-  // Track when targets are found/lost
-  targetEntity.addEventListener("targetFound", () => {
-    uiOverlay.innerText = `Scanning: Target #${i + 1}`;
-    uiOverlay.style.background = "rgba(16, 185, 129, 0.85)";
-  });
+        targetEntity.addEventListener("targetFound", () => {
+          uiOverlay.innerText = `Scanning: Target #${i + 1}`;
+          uiOverlay.style.background = "rgba(16, 185, 129, 0.85)";
+        });
 
-  targetEntity.addEventListener("targetLost", () => {
-    uiOverlay.innerText = "Point your camera at one of your 10 targets";
-    uiOverlay.style.background = "rgba(0, 0, 0, 0.7)";
-  });
+        targetEntity.addEventListener("targetLost", () => {
+          uiOverlay.innerText = "Point your camera at one of your 10 targets";
+          uiOverlay.style.background = "rgba(0, 0, 0, 0.7)";
+        });
 
-  // Inject the completed 3D composite object into the AR anchor
-  targetEntity.appendChild(signContainer);
-  container.appendChild(targetEntity);
-}
+        targetEntity.appendChild(signContainer);
+        container.appendChild(targetEntity);
+      }
     </script>
   </body>
 </html>
