@@ -38,9 +38,22 @@
       vr-mode-ui="enabled: false" 
       device-orientation-permission-ui="enabled: false"
     >
+      <!-- ASSET PRELOADER: Loads images into memory first -->
+      <a-assets>
+        <img id="tex-yosi" src="images/yosi.png">
+        <img id="tex-parking" src="images/parking.png">
+        <img id="tex-noturn" src="images/noturn.png">
+        <img id="tex-twoway" src="images/twoway.png">
+        <img id="tex-narrowroad" src="images/narrowroad.png">
+        <img id="tex-slippery" src="images/slippery.png">
+        <img id="tex-pedestrian" src="images/pedestrian.png">
+        <img id="tex-windingroad" src="images/windingroad.png">
+        <img id="tex-slipperyroad" src="images/slipperyroad.png">
+        <img id="tex-drowning" src="images/drowning.png">
+      </a-assets>
+
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
       
-      <!-- FIX 1: Changed <div> to <a-entity> -->
       <a-entity id="target-container"></a-entity>
 
     </a-scene>
@@ -50,12 +63,13 @@
       const uiOverlay = document.querySelector('#ui-overlay');
       const totalTargets = 10;
 
+      // UPDATED: Now references the IDs from the <a-assets> block
       const imageOverlays = [
-        "images/yosi.png", 
-        "images/overlay2.png", 
-        "images/overlay3.png", "images/overlay4.png", "images/overlay5.png",
-        "images/overlay6.png", "images/overlay7.png", "images/overlay8.png",
-        "images/overlay9.png", "images/overlay10.png"
+        "#tex-yosi", 
+        "#tex-parking", 
+        "#tex-noturn", "#tex-twoway", "#tex-narrowroad",
+        "#tex-slippery", "#tex-pedestrian", "#tex-windingroad",
+        "#tex-slipperyroad", "#tex-drowning"
       ];
 
       for (let i = 0; i < totalTargets; i++) {
@@ -66,7 +80,6 @@
         signContainer.setAttribute('rotation', '90 0 0');
         signContainer.setAttribute('scale', '1 1 1');
         
-        // FIX 3: Added a slow, continuous spinning animation to the whole sign
         signContainer.setAttribute('animation', 'property: rotation; to: 90 360 0; loop: true; dur: 8000; easing: linear;');
 
         const metalRim = document.createElement('a-cylinder');
@@ -89,7 +102,6 @@
         signFace.setAttribute('position', '0 0.03 0');    
         signFace.setAttribute('rotation', '-90 0 0');    
         
-        // FIX 2: Combined src and material settings into one attribute
         signFace.setAttribute('material', `src: ${imageOverlays[i]}; roughness: 0.6; metalness: 0.1;`);
 
         signContainer.appendChild(metalRim);
