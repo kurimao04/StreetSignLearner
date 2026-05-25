@@ -1,9 +1,224 @@
-<script>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>AR Sign Scanner</title>
+    
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#10b981">
+
+    <link rel="apple-touch-icon" href="images/apple-icon-180.png">
+    <link rel="icon" type="image/png" href="images/favicon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="AR Scanner">
+    
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    
+    <style>
+      /* =========================================
+         BASE APP STYLES
+         ========================================= */
+      * { box-sizing: border-box; }
+      body {
+        margin: 0; overflow: hidden; font-family: 'Poppins', sans-serif; background-color: #000;
+        overscroll-behavior-y: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; touch-action: none;
+      }
+
+      /* =========================================
+         TOP NAVIGATION BAR (Logs & Translation)
+         ========================================= */
+      #top-nav {
+        position: absolute;
+        top: max(20px, env(safe-area-inset-top));
+        left: 20px;
+        right: 20px;
+        display: flex;
+        justify-content: space-between;
+        z-index: 1001;
+        pointer-events: none;
+      }
+
+      .nav-btn {
+        background: rgba(20, 20, 25, 0.75);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.2);
+        color: white;
+        border-radius: 20px;
+        padding: 8px 16px;
+        font-family: 'Poppins', sans-serif;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        pointer-events: auto;
+        transition: 0.3s;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      }
+      .nav-btn:active { background: #10b981; transform: scale(0.95); }
+
+      /* =========================================
+         LOGBOOK MODAL (Sliding Panel)
+         ========================================= */
+      #logbook-panel {
+        position: fixed;
+        bottom: 0; left: 0; width: 100%; height: 80vh;
+        background: rgba(20, 20, 25, 0.95);
+        backdrop-filter: blur(20px);
+        border-top: 1px solid rgba(255,255,255,0.2);
+        border-radius: 24px 24px 0 0;
+        z-index: 9999;
+        transform: translateY(100%);
+        transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        display: flex; flex-direction: column;
+        padding: 20px; color: white;
+      }
+      #logbook-panel.open { transform: translateY(0); }
+      
+      .log-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px; margin-bottom: 15px; }
+      .log-header h2 { margin: 0; font-size: 20px; }
+      .close-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
+      
+      #log-list { flex: 1; overflow-y: auto; padding-right: 10px; }
+      .log-item { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 15px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.1); }
+      .log-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;}
+      .log-item h4 { margin: 0; font-size: 16px; color: #10b981; }
+      .log-item span { font-size: 12px; color: #aaa; }
+      .log-location { font-size: 12px; color: #ddd; display: block; margin-top: 5px; }
+      .empty-log { text-align: center; color: #aaa; margin-top: 40px; font-size: 14px; }
+
+      /* =========================================
+         UI OVERLAY & ACTION BUTTON
+         ========================================= */
+      #ui-overlay {
+        position: absolute; bottom: max(30px, env(safe-area-inset-bottom) + 15px); left: 50%; transform: translateX(-50%) translateY(20px); z-index: 999; width: 90%; max-width: 420px;
+        background: rgba(20, 20, 25, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4); border-radius: 24px; color: white; padding: clamp(15px, 5vw, 25px); text-align: center; pointer-events: auto; transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); opacity: 0.9;
+      }
+      #ui-overlay.found-state { background: rgba(16, 185, 129, 0.9); border: 1px solid rgba(255, 255, 255, 0.5); transform: translateX(-50%) translateY(0) scale(1.03); opacity: 1; }
+      #ui-overlay h3 { margin: 0 0 6px 0; font-size: clamp(18px, 5vw, 22px); font-weight: 600; }
+      #ui-overlay p { margin: 0; font-size: clamp(13px, 3.5vw, 15px); color: rgba(255, 255, 255, 0.95); line-height: 1.5; }
+      .icon { font-size: clamp(28px, 8vw, 32px); margin-bottom: 8px; display: block; pointer-events: none; }
+      
+      .action-btn {
+        display: inline-block; margin-top: 15px; padding: 10px 20px;
+        background: white; color: #10b981; font-weight: 600; font-family: 'Poppins', sans-serif;
+        text-decoration: none; border-radius: 12px; font-size: 14px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2); transition: 0.2s;
+      }
+      .action-btn:active { transform: scale(0.95); }
+
+      /* =========================================
+         ONBOARDING, WARNINGS & GUIDES
+         ========================================= */
+      #onboarding-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #fafafa; background-image: linear-gradient(#d1d5db 1px, transparent 1px), linear-gradient(90deg, #d1d5db 1px, transparent 1px); background-size: 40px 40px; z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; transition: opacity 0.5s ease, visibility 0.5s ease; }
+      #onboarding-screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+      .onboarding-card { background: white; border: 2px solid #111; padding: 30px; width: 90%; max-width: 400px; border-radius: 12px; box-shadow: 6px 6px 0px #111; }
+      .onboarding-card h1 { margin: 0 0 12px 0; font-size: 24px; color: #111; }
+      .onboarding-card p { margin: 0 0 20px 0; font-size: 14px; color: #444; }
+      .start-btn { background: transparent; border: 2px solid #111; color: #111; padding: 12px 24px; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 16px; border-radius: 8px; cursor: pointer; width: 100%; }
+      .start-btn:active { background: #111; color: white; transform: translateY(2px); box-shadow: 2px 2px 0px #111; }
+
+      #distance-warning { position: absolute; top: max(70px, env(safe-area-inset-top) + 50px); left: 50%; transform: translateX(-50%); background: rgba(245, 158, 11, 0.95); color: white; padding: 8px 20px; border-radius: 30px; font-size: 14px; font-weight: 600; z-index: 1000; opacity: 0; transition: 0.3s; }
+      #distance-warning.visible { opacity: 1; }
+
+      #scanning-guide { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 250px; height: 250px; z-index: 998; pointer-events: none; transition: opacity 0.4s ease; }
+      .corner { position: absolute; width: 40px; height: 40px; border-color: rgba(255, 255, 255, 0.9); border-style: solid; animation: pulse 2s infinite; }
+      .top-left { top: 0; left: 0; border-width: 4px 0 0 4px; border-top-left-radius: 16px; } .top-right { top: 0; right: 0; border-width: 4px 4px 0 0; border-top-right-radius: 16px; } .bottom-left { bottom: 0; left: 0; border-width: 0 0 4px 4px; border-bottom-left-radius: 16px; } .bottom-right { bottom: 0; right: 0; border-width: 0 4px 4px 0; border-bottom-right-radius: 16px; }
+      @keyframes pulse { 0% { transform: scale(1); opacity: 0.9; } 50% { transform: scale(1.08); opacity: 0.4; } 100% { transform: scale(1); opacity: 0.9; } }
+
+      /* =========================================
+         AI SCAN BUTTON
+         ========================================= */
+      #ai-scan-btn {
+        position: absolute;
+        bottom: 210px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1002;
+        background: #3b82f6;
+        color: white;
+        border: none;
+        padding: 12px 28px;
+        font-family: 'Poppins', sans-serif;
+        font-weight: 600;
+        font-size: 15px;
+        border-radius: 30px;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+        cursor: pointer;
+        transition: transform 0.2s, background-color 0.2s;
+      }
+      #ai-scan-btn:active {
+        transform: translateX(-50%) scale(0.95);
+        background: #2563eb;
+      }
+    </style>
+  </head>
+  <body>
+    
+    <div id="top-nav">
+      <button id="lang-toggle" class="nav-btn">🌐 EN</button>
+      <button id="mode-toggle" class="nav-btn" style="background: rgba(59, 130, 246, 0.85); pointer-events: auto;">🤖 Mode: AR</button>
+      <button id="log-toggle" class="nav-btn">📖 Logbook</button>
+    </div>
+
+    <div id="logbook-panel">
+      <div class="log-header">
+        <h2>My Sign Discoveries</h2>
+        <button class="close-btn" id="close-logs">×</button>
+      </div>
+      <div id="log-list">
+        <div class="empty-log">No signs scanned yet. Start exploring!</div>
+      </div>
+    </div>
+
+    <div id="onboarding-screen">
+      <div class="onboarding-card">
+        <h1>AR Sign Scanner</h1>
+        <p>Discover safety rules in AR. We will log the signs you find so you can review them later.</p>
+        <button class="start-btn" id="start-btn">Start Experience</button>
+      </div>
+    </div>
+
+    <button id="ai-scan-btn" style="display: none;">
+      📸 Analyze Sign with AI
+    </button>
+
+    <div id="distance-warning">⚠️ Move closer to the sign</div>
+    <div id="scanning-guide"><div class="corner top-left"></div><div class="corner top-right"></div><div class="corner bottom-left"></div><div class="corner bottom-right"></div></div>
+    
+    <div id="ui-overlay">
+      <span class="icon">📷</span><h3>Scanner Ready</h3><p>Align a sign within the target frame.</p>
+    </div>
+
+    <a-scene 
+      mindar-image="imageTargetSrc: ./targets.mind; maxTrack: 1; filterMinCF: 0.0001; filterBeta: 0.001;" 
+      color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false"
+      cursor="rayOrigin: mouse; fuse: false" raycaster="objects: .clickable"
+    >
+      <a-assets>
+        <img id="tex-yosi" src="images/yosi.png">
+        <img id="tex-parking" src="images/parking.png">
+        <img id="tex-noturn" src="images/noturn.png">
+        <img id="tex-twoway" src="images/twoway.png">
+        <img id="tex-narrowroad" src="images/narrowroad.png">
+        <img id="tex-slippery" src="images/slippery.png">
+        <img id="tex-pedestrian" src="images/predestrian.png">
+        <img id="tex-windingroad" src="images/windingroad.png">
+        <img id="tex-slipperyroad" src="images/slipperyroad.png">
+        <img id="tex-drowning" src="images/drowning.png">
+      </a-assets>
+
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+      <a-entity id="target-container"></a-entity>
+    </a-scene>
+
+    <script>
       // =========================================
       // DATA DICTIONARY (Translation & Actions)
       // =========================================
       let currentLang = 'en';
-      let appMode = 'AR'; // Tracks 'AR' or 'AI' state
+      let appMode = 'AR'; 
       
       const imageOverlays = ["#tex-yosi", "#tex-parking", "#tex-noturn", "#tex-twoway", "#tex-narrowroad", "#tex-slippery", "#tex-pedestrian", "#tex-windingroad", "#tex-slipperyroad", "#tex-drowning"];
       
@@ -149,7 +364,7 @@
       });
 
       // =========================================
-      // UI / AR LOGIC & SWITCHABLE MODES
+      // UI / AR LOGIC & INTERFACE TOGGLE SWITCH
       // =========================================
       const uiOverlay = document.querySelector('#ui-overlay');
       const scanGuide = document.querySelector('#scanning-guide');
@@ -186,7 +401,7 @@
         synth.speak(new SpeechSynthesisUtterance(''));
       });
 
-      // 🔄 FIXED: Full control toggle functionality to shift between AR and AI interfaces safely
+      // Mode Switch: Controls interface layouts and activates logic filters
       if(modeToggleBtn) {
         modeToggleBtn.addEventListener('click', () => {
           synth.cancel();
@@ -212,7 +427,7 @@
         });
       }
 
-      // Secure Serverless Function Bridge
+      // Secure Serverless Function Gateway Handler
       aiScanBtn.addEventListener('click', async () => {
         const videoElement = document.querySelector('body video');
         if (!videoElement) {
@@ -251,7 +466,7 @@
         } catch (error) {
           console.error("Cloud interpretation process aborted:", error);
           uiOverlay.innerHTML = `<span class="icon">❌</span><h3>AI Analysis Failed</h3><p>Could not evaluate target environment parameters.</p>`;
-        } biographical: {
+        } finally {
           aiScanBtn.innerText = "📸 Analyze Sign with AI";
           aiScanBtn.style.opacity = "1";
         }
@@ -278,7 +493,7 @@
         signContainer.appendChild(rim); signContainer.appendChild(back); signContainer.appendChild(face);
 
         targetEntity.addEventListener("targetFound", () => {
-          if (appMode !== 'AR') return; // Guard clause blocks overlays from firing when user is explicitly navigating inside AI mode
+          if (appMode !== 'AR') return; // Guard filter block for AI mode separation
           
           activeSignIndex = i;
           
@@ -293,7 +508,7 @@
         });
 
         targetEntity.addEventListener("targetLost", () => {
-          if (appMode !== 'AR') return;
+          if (appMode !== 'AR') return; // Guard filter block for AI mode separation
           
           activeSignIndex = null;
           synth.cancel();
@@ -306,3 +521,5 @@
         container.appendChild(targetEntity);
       }
     </script>
+  </body>
+</html>
