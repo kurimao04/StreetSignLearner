@@ -225,6 +225,7 @@
       // =========================================
       let currentLang = 'en';
       let appMode = 'AR'; 
+      const MAX_LOG_STORAGE = 20; // Set limit to only show the 20 most recent searches
       
       const imageOverlays = ["#tex-yosi", "#tex-parking", "#tex-noturn", "#tex-twoway", "#tex-narrowroad", "#tex-slippery", "#tex-pedestrian", "#tex-windingroad", "#tex-slipperyroad", "#tex-drowning"];
       
@@ -304,7 +305,7 @@
       }
 
       // =========================================
-      // LOGBOOK LOGIC (Stacking History Mode)
+      // LOGBOOK LOGIC (Rolling Recent Storage Cap)
       // =========================================
       const logListUI = document.getElementById('log-list');
       
@@ -312,21 +313,25 @@
         return JSON.parse(localStorage.getItem('ar-scans')) || [];
       }
 
-      // 🔄 CHANGED: Duplicate filters removed. It now saves EVERY individual scan event.
       function saveScanToLog(signIndex) {
-        const logs = getLogs();
+        let logs = getLogs();
         const sign = signData[signIndex];
         
         const newEntry = {
           id: sign.id, 
           icon: sign.icon,
-          title: sign[currentLang].title, // Stores using the active language choice
+          title: sign[currentLang].title, 
           time: new Date().toISOString(),
           location: "Searching location...",
           langLabel: currentLang.toUpperCase()
         };
         
         logs.unshift(newEntry);
+
+        if (logs.length > MAX_LOG_STORAGE) {
+          logs = logs.slice(0, MAX_LOG_STORAGE);
+        }
+
         localStorage.setItem('ar-scans', JSON.stringify(logs));
         renderLogs();
 
@@ -336,7 +341,45 @@
             const lng = pos.coords.longitude.toFixed(4);
             
             const updatedLogs = getLogs();
-            if (updatedLogs.length > 0) {
+            // 🛡️ FIX: Make sure the entry wasn't wiped out by a Clear All action mid-lookup
+            if (updatedLogs && updatedLogs.length > 0) {
+              updatedLogs[0].location = `Lat: ${lat}, Lng: ${lng}`;
+              localStorage.setItem('ar-scans', JSON.stringify(updatedLogs));
+              renderLogs();
+            }
+          }, () => {}, { timeout: 5000 });
+        }
+      }
+
+      function saveAIScanToLog(title, langUsed) {
+        let logs = getLogs();
+        
+        const newEntry = {
+          id: "ai-generated-" + Date.now(),
+          icon: "🤖",
+          title: title,
+          time: new Date().toISOString(),
+          location: "Searching location...",
+          langLabel: langUsed.toUpperCase()
+        };
+
+        logs.unshift(newEntry);
+
+        if (logs.length > MAX_LOG_STORAGE) {
+          logs = logs.slice(0, MAX_LOG_STORAGE);
+        }
+
+        localStorage.setItem('ar-scans', JSON.stringify(logs));
+        renderLogs();
+
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition((pos) => {
+            const lat = pos.coords.latitude.toFixed(4);
+            const lng = pos.coords.longitude.toFixed(4);
+            
+            const updatedLogs = getLogs();
+            // 🛡️ FIX: Added matching protective wrap condition block for AI entries
+            if (updatedLogs && updatedLogs.length > 0) {
               updatedLogs[0].location = `Lat: ${lat}, Lng: ${lng}`;
               localStorage.setItem('ar-scans', JSON.stringify(updatedLogs));
               renderLogs();
@@ -362,7 +405,7 @@
               </div>
               <div class="log-details">
                 <span>📍 ${log.location}</span>
-                <span style="color: #3b82f6; font-weight: bold;">🌐 Mode: ${log.langLabel || 'EN'}</span>
+                <span style="color: #3b82f6; font-weight: bold;">🌐 Lang: ${log.langLabel || 'EN'}</span>
               </div>
             </div>
           `;
@@ -377,7 +420,6 @@
         document.getElementById('logbook-panel').classList.remove('open');
       });
       
-      // Clear function to empty out stacked histories easily
       document.getElementById('clear-logs').addEventListener('click', () => {
         if(confirm("Are you sure you want to delete all stored history entries?")) {
           localStorage.removeItem('ar-scans');
@@ -488,6 +530,9 @@
           uiOverlay.classList.add("found-state");
           
           speakText(`${aiResult.title}. ${aiResult.purpose}`);
+
+          // Log the dynamic AI identification result under our rolling storage rules
+          saveAIScanToLog(aiResult.title, currentLang);
 
         } catch (error) {
           console.error("Cloud interpretation process aborted:", error);
