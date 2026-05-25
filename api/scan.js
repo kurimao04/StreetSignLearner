@@ -1,21 +1,25 @@
 // api/scan.js
 export default async function handler(req, res) {
-  // Only allow POST requests (which send the image)
+  // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Pull the API key safely from Vercel's server environment
+  // Pull the API key securely from Vercel's server environment
   const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
   if (!GEMINI_API_KEY) {
-    return res.status(500).json({ error: 'API key is not configured on the server.' });
+    return res.status(500).json({ error: 'API key configuration missing on Vercel server.' });
   }
 
   try {
-    const { image } = req.body; // Receive the base64 image from index.html
+    const { image } = req.body; // Receive base64 data from index.html
 
-    // Forward the image to Google Gemini
+    if (!image) {
+      return res.status(400).json({ error: 'No image data provided' });
+    }
+
+    // Forward the frame to Google Gemini Flash Vision API
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -30,13 +34,22 @@ export default async function handler(req, res) {
     });
 
     const resData = await response.json();
-    const rawText = resData.candidates[0].content.parts[0].text.trim();
-    const cleanJSONString = rawText.replace(/```json|```/g, '');
     
-    // Send the clean result back to the mobile browser
-    return res.status(200).json(JSON.parse(cleanJSONString));
+    if (!resData.candidates || resData.candidates.length === 0) {
+      throw new Error("No response matching structure from Gemini API");
+    }
+
+    const rawText = resData.candidates[0].content.parts[0].text.trim();
+    
+    // Safety check to remove unexpected markdown wrapping blocks
+    const cleanJSONString = rawText.replace(/```json|```/g, '');
+    const parsedData = JSON.parse(cleanJSONString);
+    
+    // Deliver the structured sign details back to the app frontend safely
+    return res.status(200).json(parsedData);
 
   } catch (error) {
-    return res.status(500).json({ error: 'Failed to analyze image', details: error.message });
+    console.error("Backend Error:", error);
+    return res.status(500).json({ error: 'Failed to analyze image matrix via AI model.', details: error.message });
   }
 }
