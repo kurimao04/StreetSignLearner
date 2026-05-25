@@ -448,10 +448,14 @@
           
           const base64Data = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
 
+          // Forward payload with active translation settings
           const response = await fetch('/api/scan', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ image: base64Data })
+            body: JSON.stringify({ 
+              image: base64Data,
+              lang: currentLang // Forward selected language tag over network parameters
+            })
           });
 
           if (!response.ok) throw new Error("Endpoint rejected context request payload.");
