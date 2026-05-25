@@ -78,14 +78,17 @@
       
       .log-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px; margin-bottom: 15px; }
       .log-header h2 { margin: 0; font-size: 20px; }
-      .close-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
+      
+      .header-actions { display: flex; align-items: center; gap: 15px; }
+      .clear-btn { background: none; border: none; color: #ef4444; font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'Poppins', sans-serif; }
+      .close-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; line-height: 1; }
       
       #log-list { flex: 1; overflow-y: auto; padding-right: 10px; }
       .log-item { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 15px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.1); }
       .log-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;}
       .log-item h4 { margin: 0; font-size: 16px; color: #10b981; }
       .log-item span { font-size: 12px; color: #aaa; }
-      .log-location { font-size: 12px; color: #ddd; display: block; margin-top: 5px; }
+      .log-details { display: flex; justify-content: space-between; font-size: 12px; color: #ddd; margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 5px; }
       .empty-log { text-align: center; color: #aaa; margin-top: 40px; font-size: 14px; }
 
       /* =========================================
@@ -165,7 +168,10 @@
     <div id="logbook-panel">
       <div class="log-header">
         <h2>My Sign Discoveries</h2>
-        <button class="close-btn" id="close-logs">×</button>
+        <div class="header-actions">
+          <button id="clear-logs" class="clear-btn">🗑️ Clear All</button>
+          <button class="close-btn" id="close-logs">×</button>
+        </div>
       </div>
       <div id="log-list">
         <div class="empty-log">No signs scanned yet. Start exploring!</div>
@@ -298,7 +304,7 @@
       }
 
       // =========================================
-      // LOGBOOK & GEOLOCATION LOGIC
+      // LOGBOOK LOGIC (Stacking History Mode)
       // =========================================
       const logListUI = document.getElementById('log-list');
       
@@ -306,18 +312,18 @@
         return JSON.parse(localStorage.getItem('ar-scans')) || [];
       }
 
+      // 🔄 CHANGED: Duplicate filters removed. It now saves EVERY individual scan event.
       function saveScanToLog(signIndex) {
         const logs = getLogs();
         const sign = signData[signIndex];
         
-        const alreadyScannedToday = logs.some(l => l.id === sign.id && new Date(l.time).toDateString() === new Date().toDateString());
-        if(alreadyScannedToday) return;
-
         const newEntry = {
-          id: sign.id, icon: sign.icon,
-          title: sign.en.title,
+          id: sign.id, 
+          icon: sign.icon,
+          title: sign[currentLang].title, // Stores using the active language choice
           time: new Date().toISOString(),
-          location: "Searching location..."
+          location: "Searching location...",
+          langLabel: currentLang.toUpperCase()
         };
         
         logs.unshift(newEntry);
@@ -330,26 +336,34 @@
             const lng = pos.coords.longitude.toFixed(4);
             
             const updatedLogs = getLogs();
-            updatedLogs[0].location = `Lat: ${lat}, Lng: ${lng}`;
-            localStorage.setItem('ar-scans', JSON.stringify(updatedLogs));
-            renderLogs();
-          });
+            if (updatedLogs.length > 0) {
+              updatedLogs[0].location = `Lat: ${lat}, Lng: ${lng}`;
+              localStorage.setItem('ar-scans', JSON.stringify(updatedLogs));
+              renderLogs();
+            }
+          }, () => {}, { timeout: 5000 });
         }
       }
 
       function renderLogs() {
         const logs = getLogs();
-        if (logs.length === 0) return;
+        if (logs.length === 0) {
+          logListUI.innerHTML = `<div class="empty-log">No signs scanned yet. Start exploring!</div>`;
+          return;
+        }
         
         logListUI.innerHTML = logs.map(log => {
-          const dateStr = new Date(log.time).toLocaleDateString() + ' at ' + new Date(log.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+          const dateStr = new Date(log.time).toLocaleDateString() + ' at ' + new Date(log.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
           return `
             <div class="log-item">
               <div class="log-item-header">
                 <h4>${log.icon} ${log.title}</h4>
                 <span>${dateStr}</span>
               </div>
-              <span class="log-location">📍 ${log.location}</span>
+              <div class="log-details">
+                <span>📍 ${log.location}</span>
+                <span style="color: #3b82f6; font-weight: bold;">🌐 Mode: ${log.langLabel || 'EN'}</span>
+              </div>
             </div>
           `;
         }).join('');
@@ -361,6 +375,14 @@
       });
       document.getElementById('close-logs').addEventListener('click', () => {
         document.getElementById('logbook-panel').classList.remove('open');
+      });
+      
+      // Clear function to empty out stacked histories easily
+      document.getElementById('clear-logs').addEventListener('click', () => {
+        if(confirm("Are you sure you want to delete all stored history entries?")) {
+          localStorage.removeItem('ar-scans');
+          renderLogs();
+        }
       });
 
       // =========================================
@@ -454,7 +476,7 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
               image: base64Data,
-              lang: currentLang // Forward selected language tag over network parameters
+              lang: currentLang 
             })
           });
 
@@ -497,7 +519,7 @@
         signContainer.appendChild(rim); signContainer.appendChild(back); signContainer.appendChild(face);
 
         targetEntity.addEventListener("targetFound", () => {
-          if (appMode !== 'AR') return; // Guard filter block for AI mode separation
+          if (appMode !== 'AR') return; 
           
           activeSignIndex = i;
           
@@ -512,7 +534,7 @@
         });
 
         targetEntity.addEventListener("targetLost", () => {
-          if (appMode !== 'AR') return; // Guard filter block for AI mode separation
+          if (appMode !== 'AR') return; 
           
           activeSignIndex = null;
           synth.cancel();
