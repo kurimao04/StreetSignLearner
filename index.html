@@ -7,7 +7,6 @@
     <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#10b981">
 
-    <!-- iOS Home Screen / Bookmark Icons -->
     <link rel="apple-touch-icon" href="images/apple-icon-180.png">
     <link rel="icon" type="image/png" href="images/favicon.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -29,7 +28,7 @@
       }
 
       /* =========================================
-         TOP NAVIGATION BAR (Logs & Translation)
+         TOP NAVIGATION BAR (Logs, Mode & Translation)
          ========================================= */
       #top-nav {
         position: absolute;
@@ -131,13 +130,12 @@
   </head>
   <body>
     
-    <!-- Top Nav: Translation & Logs -->
     <div id="top-nav">
       <button id="lang-toggle" class="nav-btn">🌐 EN</button>
+      <button id="mode-toggle" class="nav-btn" style="background: rgba(59, 130, 246, 0.85);">🤖 Mode: AR</button>
       <button id="log-toggle" class="nav-btn">📖 Logbook</button>
     </div>
 
-    <!-- Scanner Logbook Modal -->
     <div id="logbook-panel">
       <div class="log-header">
         <h2>My Sign Discoveries</h2>
@@ -148,7 +146,6 @@
       </div>
     </div>
 
-    <!-- Onboarding -->
     <div id="onboarding-screen">
       <div class="onboarding-card">
         <h1>AR Sign Scanner</h1>
@@ -157,7 +154,10 @@
       </div>
     </div>
 
-    <!-- UI Elements -->
+    <button id="ai-scan-btn" style="display: none; position: absolute; bottom: 220px; left: 50%; transform: translateX(-50%); z-index: 1002; background: #3b82f6; color: white; border: none; padding: 12px 28px; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 15px; border-radius: 30px; box-shadow: 0 6px 20px rgba(0,0,0,0.4); cursor: pointer; transition: 0.2s;">
+      📸 Analyze Sign with AI
+    </button>
+
     <div id="distance-warning">⚠️ Move closer to the sign</div>
     <div id="scanning-guide"><div class="corner top-left"></div><div class="corner top-right"></div><div class="corner bottom-left"></div><div class="corner bottom-right"></div></div>
     
@@ -165,7 +165,6 @@
       <span class="icon">📷</span><h3>Scanner Ready</h3><p>Align a sign within the frame to scan.</p>
     </div>
 
-    <!-- AR Scene -->
     <a-scene 
       mindar-image="imageTargetSrc: ./targets.mind; maxTrack: 1; filterMinCF: 0.0001; filterBeta: 0.001;" 
       color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false"
@@ -193,6 +192,7 @@
       // DATA DICTIONARY (Translation & Actions)
       // =========================================
       let currentLang = 'en';
+      let appMode = 'AR'; // Options state tracking: 'AR' or 'AI'
       
       const imageOverlays = ["#tex-yosi", "#tex-parking", "#tex-noturn", "#tex-twoway", "#tex-narrowroad", "#tex-slippery", "#tex-pedestrian", "#tex-windingroad", "#tex-slipperyroad", "#tex-drowning"];
       
@@ -236,8 +236,8 @@
         },
         { 
           id: "winding", icon: "🔄",
-          en: { title: "Winding Road", desc: "The road curves continuously. Drive carefully." },
-          tl: { title: "Liku-likong Daan", desc: "Tuloy-tuloy ang pagliko ng kalsada. Mag-ingat." }
+          en: { title: "Winding Road", desc: "Series of curves ahead. Reduce speed and drive carefully." },
+          tl: { title: "Paikot-ikot na Daan", desc: "Sunod-sunod na kurbada sa unahan. Bawasan ang bilis." }
         },
         { 
           id: "wet-road", icon: "🌧️",
@@ -338,10 +338,12 @@
       });
 
       // =========================================
-      // UI / AR LOGIC
+      // UI / AR LOGIC & MODE CONTROLS
       // =========================================
       const uiOverlay = document.querySelector('#ui-overlay');
       const scanGuide = document.querySelector('#scanning-guide');
+      const modeToggleBtn = document.getElementById('mode-toggle');
+      const aiScanBtn = document.getElementById('ai-scan-btn');
       let activeSignIndex = null;
 
       document.getElementById('lang-toggle').addEventListener('click', (e) => {
@@ -373,7 +375,77 @@
         synth.speak(new SpeechSynthesisUtterance(''));
       });
 
-      // AR Target Setup
+      // Toggle functionality between AR Target matching and Cloud AI vision processing
+      modeToggleBtn.addEventListener('click', () => {
+        if (appMode === 'AR') {
+          appMode = 'AI';
+          modeToggleBtn.innerText = "🤖 Mode: AI";
+          modeToggleBtn.style.background = "rgba(16, 185, 129, 0.85)"; // Operational green
+          aiScanBtn.style.display = "block";
+          
+          uiOverlay.innerHTML = `<span class="icon">🤖</span><h3>AI Analyzer Ready</h3><p>Point at any street sign and tap Analyze.</p>`;
+          uiOverlay.classList.remove("found-state");
+        } else {
+          appMode = 'AR';
+          modeToggleBtn.innerText = "🤖 Mode: AR";
+          modeToggleBtn.style.background = "rgba(59, 130, 246, 0.85)"; // Neutral blue
+          aiScanBtn.style.display = "none";
+          
+          uiOverlay.innerHTML = `<span class="icon">📷</span><h3>Scanner Ready</h3><p>Align a sign within the frame to scan.</p>`;
+          uiOverlay.classList.remove("found-state");
+        }
+      });
+
+      // Execution sequence for Image capture frame extraction and Serverless delivery
+      aiScanBtn.addEventListener('click', async () => {
+        const videoElement = document.querySelector('body video');
+        if (!videoElement) {
+          alert("Camera stream tracker is uninitialized!");
+          return;
+        }
+
+        aiScanBtn.innerText = "⚡ Thinking...";
+        aiScanBtn.style.opacity = "0.6";
+        uiOverlay.innerHTML = `<span class="icon">⏳</span><h3>Analyzing Image...</h3><p>Processing text elements and sign features via cloud server.</p>`;
+
+        try {
+          // Process current live layout tracking from the underlying video source
+          const canvas = document.createElement('canvas');
+          canvas.width = videoElement.videoWidth || 640;
+          canvas.height = videoElement.videoHeight || 480;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+          
+          // Generate clean base64 payload representation
+          const base64Data = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
+
+          // Forward to local serverless directory context endpoint
+          const response = await fetch('/api/scan', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image: base64Data })
+          });
+
+          if (!response.ok) throw new Error("API Route request rejected by backend server context.");
+          
+          const aiResult = await response.json();
+
+          // Apply standard rendering layout styles over elements
+          uiOverlay.innerHTML = `<span class="icon">🚦</span><h3>${aiResult.title}</h3><p>${aiResult.purpose}</p>`;
+          uiOverlay.classList.add("found-state");
+          
+          speakText(`${aiResult.title}. ${aiResult.purpose}`);
+
+        } catch (error) {
+          console.error("AI Scan routine aborted:", error);
+          uiOverlay.innerHTML = `<span class="icon">❌</span><h3>Analysis Failed</h3><p>Could not reach interpretation engines. Check internet service connection.</p>`;
+        } finally {
+          aiScanBtn.innerText = "📸 Analyze Sign with AI";
+          aiScanBtn.style.opacity = "1";
+        }
+      });
+
+      // AR Target Setup Loop
       const container = document.querySelector('#target-container');
       for (let i = 0; i < signData.length; i++) {
         const targetEntity = document.createElement('a-entity');
@@ -394,6 +466,8 @@
         signContainer.appendChild(rim); signContainer.appendChild(back); signContainer.appendChild(face);
 
         targetEntity.addEventListener("targetFound", () => {
+          if (appMode !== 'AR') return; // Guard clause blocking interaction patterns if user is running cloud tracking configurations
+          
           activeSignIndex = i;
           
           playTone(880, 'sine', 0.1); setTimeout(() => playTone(1100, 'sine', 0.2), 100);
@@ -408,6 +482,8 @@
         });
 
         targetEntity.addEventListener("targetLost", () => {
+          if (appMode !== 'AR') return; // Guard clause protecting viewport rendering context configurations
+          
           activeSignIndex = null;
           synth.cancel();
           uiOverlay.innerHTML = `<span class="icon">📷</span><h3>Scanner Ready</h3><p>Align a sign within the frame to scan.</p>`;
