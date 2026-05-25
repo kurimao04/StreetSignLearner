@@ -28,7 +28,7 @@
       }
 
       /* =========================================
-         TOP NAVIGATION BAR (Logs, Mode & Translation)
+         TOP NAVIGATION BAR (Logs & Translation)
          ========================================= */
       #top-nav {
         position: absolute;
@@ -126,13 +126,38 @@
       .corner { position: absolute; width: 40px; height: 40px; border-color: rgba(255, 255, 255, 0.9); border-style: solid; animation: pulse 2s infinite; }
       .top-left { top: 0; left: 0; border-width: 4px 0 0 4px; border-top-left-radius: 16px; } .top-right { top: 0; right: 0; border-width: 4px 4px 0 0; border-top-right-radius: 16px; } .bottom-left { bottom: 0; left: 0; border-width: 0 0 4px 4px; border-bottom-left-radius: 16px; } .bottom-right { bottom: 0; right: 0; border-width: 0 4px 4px 0; border-bottom-right-radius: 16px; }
       @keyframes pulse { 0% { transform: scale(1); opacity: 0.9; } 50% { transform: scale(1.08); opacity: 0.4; } 100% { transform: scale(1); opacity: 0.9; } }
+
+      /* =========================================
+         AI ANALYZE FLOATING TRIGGER BUTTON
+         ========================================= */
+      #ai-scan-btn {
+        position: absolute;
+        bottom: 210px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1002;
+        background: #3b82f6;
+        color: white;
+        border: none;
+        padding: 12px 28px;
+        font-family: 'Poppins', sans-serif;
+        font-weight: 600;
+        font-size: 15px;
+        border-radius: 30px;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+        cursor: pointer;
+        transition: transform 0.2s, background-color 0.2s;
+      }
+      #ai-scan-btn:active {
+        transform: translateX(-50%) scale(0.95);
+        background: #2563eb;
+      }
     </style>
   </head>
   <body>
     
     <div id="top-nav">
       <button id="lang-toggle" class="nav-btn">🌐 EN</button>
-      <button id="mode-toggle" class="nav-btn" style="background: rgba(59, 130, 246, 0.85);">🤖 Mode: AR</button>
       <button id="log-toggle" class="nav-btn">📖 Logbook</button>
     </div>
 
@@ -154,7 +179,7 @@
       </div>
     </div>
 
-    <button id="ai-scan-btn" style="display: none; position: absolute; bottom: 220px; left: 50%; transform: translateX(-50%); z-index: 1002; background: #3b82f6; color: white; border: none; padding: 12px 28px; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 15px; border-radius: 30px; box-shadow: 0 6px 20px rgba(0,0,0,0.4); cursor: pointer; transition: 0.2s;">
+    <button id="ai-scan-btn">
       📸 Analyze Sign with AI
     </button>
 
@@ -192,7 +217,6 @@
       // DATA DICTIONARY (Translation & Actions)
       // =========================================
       let currentLang = 'en';
-      let appMode = 'AR'; // Options state tracking: 'AR' or 'AI'
       
       const imageOverlays = ["#tex-yosi", "#tex-parking", "#tex-noturn", "#tex-twoway", "#tex-narrowroad", "#tex-slippery", "#tex-pedestrian", "#tex-windingroad", "#tex-slipperyroad", "#tex-drowning"];
       
@@ -338,11 +362,10 @@
       });
 
       // =========================================
-      // UI / AR LOGIC & MODE CONTROLS
+      // UI / AR LOGIC & HYBRID AI MODULE
       // =========================================
       const uiOverlay = document.querySelector('#ui-overlay');
       const scanGuide = document.querySelector('#scanning-guide');
-      const modeToggleBtn = document.getElementById('mode-toggle');
       const aiScanBtn = document.getElementById('ai-scan-btn');
       let activeSignIndex = null;
 
@@ -375,77 +398,55 @@
         synth.speak(new SpeechSynthesisUtterance(''));
       });
 
-      // Toggle functionality between AR Target matching and Cloud AI vision processing
-      modeToggleBtn.addEventListener('click', () => {
-        if (appMode === 'AR') {
-          appMode = 'AI';
-          modeToggleBtn.innerText = "🤖 Mode: AI";
-          modeToggleBtn.style.background = "rgba(16, 185, 129, 0.85)"; // Operational green
-          aiScanBtn.style.display = "block";
-          
-          uiOverlay.innerHTML = `<span class="icon">🤖</span><h3>AI Analyzer Ready</h3><p>Point at any street sign and tap Analyze.</p>`;
-          uiOverlay.classList.remove("found-state");
-        } else {
-          appMode = 'AR';
-          modeToggleBtn.innerText = "🤖 Mode: AR";
-          modeToggleBtn.style.background = "rgba(59, 130, 246, 0.85)"; // Neutral blue
-          aiScanBtn.style.display = "none";
-          
-          uiOverlay.innerHTML = `<span class="icon">📷</span><h3>Scanner Ready</h3><p>Align a sign within the frame to scan.</p>`;
-          uiOverlay.classList.remove("found-state");
-        }
-      });
-
-      // Execution sequence for Image capture frame extraction and Serverless delivery
+      // Unified Cloud Vision Handler
       aiScanBtn.addEventListener('click', async () => {
         const videoElement = document.querySelector('body video');
         if (!videoElement) {
-          alert("Camera stream tracker is uninitialized!");
+          alert("Camera track stream not loaded yet!");
           return;
         }
 
-        aiScanBtn.innerText = "⚡ Thinking...";
+        aiScanBtn.innerText = "⚡ AI Thinking...";
         aiScanBtn.style.opacity = "0.6";
-        uiOverlay.innerHTML = `<span class="icon">⏳</span><h3>Analyzing Image...</h3><p>Processing text elements and sign features via cloud server.</p>`;
+        uiOverlay.innerHTML = `<span class="icon">⏳</span><h3>AI Analyzing...</h3><p>Extracting image properties via serverless secure router context...</p>`;
 
         try {
-          // Process current live layout tracking from the underlying video source
+          // Frame capture step from running video thread
           const canvas = document.createElement('canvas');
           canvas.width = videoElement.videoWidth || 640;
           canvas.height = videoElement.videoHeight || 480;
           const ctx = canvas.getContext('2d');
           ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
           
-          // Generate clean base64 payload representation
           const base64Data = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
 
-          // Forward to local serverless directory context endpoint
+          // Forward to local Vercel endpoint (keeping your key hidden)
           const response = await fetch('/api/scan', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ image: base64Data })
           });
 
-          if (!response.ok) throw new Error("API Route request rejected by backend server context.");
+          if (!response.ok) throw new Error("Endpoint rejected context request thread data payload.");
           
           const aiResult = await response.json();
 
-          // Apply standard rendering layout styles over elements
-          uiOverlay.innerHTML = `<span class="icon">🚦</span><h3>${aiResult.title}</h3><p>${aiResult.purpose}</p>`;
+          // Display AI insights inside UI overlay container card without disrupting the active 3D world space coordinates
+          uiOverlay.innerHTML = `<span class="icon">🤖</span><h3>${aiResult.title} (AI Verified)</h3><p>${aiResult.purpose}</p>`;
           uiOverlay.classList.add("found-state");
           
           speakText(`${aiResult.title}. ${aiResult.purpose}`);
 
         } catch (error) {
-          console.error("AI Scan routine aborted:", error);
-          uiOverlay.innerHTML = `<span class="icon">❌</span><h3>Analysis Failed</h3><p>Could not reach interpretation engines. Check internet service connection.</p>`;
+          console.error("Cloud interpretation process aborted:", error);
+          uiOverlay.innerHTML = `<span class="icon">❌</span><h3>AI Analysis Failed</h3><p>Could not read sign parameters. Check your server metrics or connection.</p>`;
         } finally {
           aiScanBtn.innerText = "📸 Analyze Sign with AI";
           aiScanBtn.style.opacity = "1";
         }
       });
 
-      // AR Target Setup Loop
+      // AR Target Generation System
       const container = document.querySelector('#target-container');
       for (let i = 0; i < signData.length; i++) {
         const targetEntity = document.createElement('a-entity');
@@ -466,8 +467,6 @@
         signContainer.appendChild(rim); signContainer.appendChild(back); signContainer.appendChild(face);
 
         targetEntity.addEventListener("targetFound", () => {
-          if (appMode !== 'AR') return; // Guard clause blocking interaction patterns if user is running cloud tracking configurations
-          
           activeSignIndex = i;
           
           playTone(880, 'sine', 0.1); setTimeout(() => playTone(1100, 'sine', 0.2), 100);
@@ -482,8 +481,6 @@
         });
 
         targetEntity.addEventListener("targetLost", () => {
-          if (appMode !== 'AR') return; // Guard clause protecting viewport rendering context configurations
-          
           activeSignIndex = null;
           synth.cancel();
           uiOverlay.innerHTML = `<span class="icon">📷</span><h3>Scanner Ready</h3><p>Align a sign within the frame to scan.</p>`;
